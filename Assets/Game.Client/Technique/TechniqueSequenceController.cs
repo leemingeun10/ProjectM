@@ -19,6 +19,7 @@ namespace Game.Client.Technique
         [SerializeField] private Toggle retreatToggle;
         [SerializeField] private Toggle counterToggle;
         [SerializeField] private Text statusText;
+        [SerializeField] private Button resetButton;
 
         private readonly TechniqueBuilder builder = new TechniqueBuilder();
 
@@ -27,12 +28,23 @@ namespace Game.Client.Technique
         private void OnEnable()
         {
             strokeInput.StrokeCompleted += OnStrokeCompleted;
+            resetButton.onClick.AddListener(ResetSequence);
             UpdateUi();
         }
 
         private void OnDisable()
         {
             strokeInput.StrokeCompleted -= OnStrokeCompleted;
+            resetButton.onClick.RemoveListener(ResetSequence);
+        }
+
+        // Named ResetSequence rather than Reset: MonoBehaviour.Reset is an editor message.
+        public void ResetSequence()
+        {
+            builder.Reset();
+            counterToggle.isOn = false;
+            UpdateUi();
+            Debug.Log("[Technique] 시퀀스 초기화됨");
         }
 
         private void OnStrokeCompleted(StrokeResult stroke, IReadOnlyList<StrokePoint> rawPoints)

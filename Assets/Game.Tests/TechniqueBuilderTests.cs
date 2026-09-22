@@ -65,5 +65,47 @@ namespace Game.Tests
             for (int i = 0; i < builder.TurnCount; i++)
                 Assert.AreEqual(i, builder.Steps[i].TurnIndex);
         }
+
+        [Test]
+        public void ResetClearsStepsAndRestoresCounters()
+        {
+            var builder = new TechniqueBuilder();
+            builder.TryAddStep(Stance.Stand, false, DummyStroke(), DummyPoints());
+            builder.TryAddStep(Stance.Sit, true, DummyStroke(), DummyPoints());
+            builder.TryAddStep(Stance.Advance, false, DummyStroke(), DummyPoints());
+            builder.TryAddStep(Stance.Retreat, true, DummyStroke(), DummyPoints());
+            Assert.AreEqual(4, builder.TurnCount);
+            Assert.AreEqual(0, builder.RemainingCounters);
+
+            builder.Reset();
+
+            Assert.AreEqual(0, builder.TurnCount);
+            Assert.AreEqual(0, builder.Steps.Count);
+            Assert.AreEqual(TechniqueBuilder.MaxCounters, builder.RemainingCounters);
+            Assert.IsFalse(builder.IsFull);
+        }
+
+        [Test]
+        public void CanBuildFullSequenceAgainAfterReset()
+        {
+            var builder = new TechniqueBuilder();
+            for (int i = 0; i < TechniqueBuilder.MaxTurns; i++)
+                builder.TryAddStep(Stance.Stand, i < TechniqueBuilder.MaxCounters, DummyStroke(), DummyPoints());
+            Assert.IsTrue(builder.IsFull);
+            Assert.AreEqual(0, builder.RemainingCounters);
+
+            builder.Reset();
+
+            for (int i = 0; i < TechniqueBuilder.MaxTurns; i++)
+            {
+                bool isCounter = i < TechniqueBuilder.MaxCounters;
+                Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(Stance.Stand, isCounter, DummyStroke(), DummyPoints()));
+            }
+
+            Assert.AreEqual(TechniqueBuilder.MaxTurns, builder.TurnCount);
+            Assert.IsTrue(builder.IsFull);
+            for (int i = 0; i < builder.TurnCount; i++)
+                Assert.AreEqual(i, builder.Steps[i].TurnIndex);
+        }
     }
 }

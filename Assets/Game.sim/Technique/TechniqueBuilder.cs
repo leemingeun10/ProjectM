@@ -30,5 +30,12 @@ namespace Game.Sim.Technique
 
             return TechniqueAddResult.Success;
         }
+
+        // Clears all steps and restores the counter budget so a fresh sequence can be built.
+        public void Reset()
+        {
+            steps.Clear();
+            counterCount = 0;
+        }
     }
 }
