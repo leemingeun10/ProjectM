@@ -9,6 +9,10 @@ namespace Game.Sim.Stroke
         // that distance of each other (or cross) mark the stroke as a Thrust. Tune by playtesting.
         public static readonly Fixed SelfContactThreshold = Fixed.FromRatio(3, 100);
 
+        // Cross-contact distance between two different strokes = this ratio * their combined
+        // path length. Starts equal to SelfContactThreshold; tune separately by playtesting.
+        public static readonly Fixed CrossContactThreshold = Fixed.FromRatio(3, 100);
+
         public static StrokeResult Analyze(IReadOnlyList<StrokePoint> points)
         {
             if (points == null || points.Count < 2)
@@ -16,9 +20,7 @@ namespace Game.Sim.Stroke
 
             int segmentCount = points.Count - 1;
 
-            Fixed totalLength = Fixed.Zero;
-            for (int i = 0; i < segmentCount; i++)
-                totalLength += Distance(points[i], points[i + 1]);
+            Fixed totalLength = PathLength(points);
 
             Fixed threshold = totalLength * SelfContactThreshold;
 
@@ -42,6 +44,37 @@ namespace Game.Sim.Stroke
             (Fixed sx, Fixed sy) = Direction(points[0], points[1]);
             (Fixed ex, Fixed ey) = Direction(points[points.Count - 2], points[points.Count - 1]);
             return StrokeResult.Slash(totalLength, sx, sy, ex, ey);
+        }
+
+        // True if any segment of stroke a crosses or comes within the cross-contact distance of
+        // any segment of stroke b. A stroke with fewer than 2 points has no segments and never
+        // makes contact.
+        public static bool CrossStrokeContact(IReadOnlyList<StrokePoint> a, IReadOnlyList<StrokePoint> b)
+        {
+            if (a == null || b == null || a.Count < 2 || b.Count < 2)
+                return false;
+
+            Fixed threshold = (PathLength(a) + PathLength(b)) * CrossContactThreshold;
+
+            for (int i = 0; i < a.Count - 1; i++)
+            {
+                for (int j = 0; j < b.Count - 1; j++)
+                {
+                    Fixed d = SegmentToSegmentDistance(a[i], a[i + 1], b[j], b[j + 1]);
+                    if (d.Raw <= threshold.Raw)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static Fixed PathLength(IReadOnlyList<StrokePoint> points)
+        {
+            Fixed length = Fixed.Zero;
+            for (int i = 0; i < points.Count - 1; i++)
+                length += Distance(points[i], points[i + 1]);
+            return length;
         }
 
         private static (Fixed, Fixed) Direction(StrokePoint from, StrokePoint to)

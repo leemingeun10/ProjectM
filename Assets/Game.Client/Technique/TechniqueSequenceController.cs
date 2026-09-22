@@ -22,6 +22,8 @@ namespace Game.Client.Technique
 
         private readonly TechniqueBuilder builder = new TechniqueBuilder();
 
+        public TechniqueBuilder Builder => builder;
+
         private void OnEnable()
         {
             strokeInput.StrokeCompleted += OnStrokeCompleted;
