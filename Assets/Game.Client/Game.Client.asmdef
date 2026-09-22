@@ -2,7 +2,9 @@
     "name": "Game.Client",
     "rootNamespace": "",
     "references": [
-        "GUID:0accf666ea13d1c47896bbd01f5867f7"
+        "GUID:0accf666ea13d1c47896bbd01f5867f7",
+        "Unity.InputSystem",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
