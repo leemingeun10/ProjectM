@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Game.Client.Battle;
 using Game.Sim.Battle;
 using Game.Sim.Stroke;
 using Game.Sim.Technique;
@@ -22,6 +23,7 @@ namespace Game.Client.Technique
         [SerializeField] private Toggle slotAToggle;
         [SerializeField] private Toggle slotBToggle;
         [SerializeField] private Button battleButton;
+        [SerializeField] private BattleReplayController replayController;
 
         private static string FilePathA => Path.Combine(Application.persistentDataPath, FileNameA);
         private static string FilePathB => Path.Combine(Application.persistentDataPath, FileNameB);
@@ -102,6 +104,8 @@ namespace Game.Client.Technique
             sb.AppendLine($"최종 결과: {result.Outcome} - 최종 HP A:{result.FinalHpA} B:{result.FinalHpB}");
 
             Debug.Log(sb.ToString());
+
+            replayController.StartReplay(result);
         }
 
         private static bool TryReadSteps(string path, out int version, out List<TechniqueStep> steps)
