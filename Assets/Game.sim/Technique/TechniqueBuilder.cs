@@ -16,7 +16,7 @@ namespace Game.Sim.Technique
         public int RemainingCounters => MaxCounters - counterCount;
         public bool IsFull => steps.Count >= MaxTurns;
 
-        public TechniqueAddResult TryAddStep(Stance stance, bool isCounter, StrokeResult stroke, IReadOnlyList<StrokePoint> rawPoints)
+        public TechniqueAddResult TryAddStep(bool isCounter, StrokeResult stroke, IReadOnlyList<StrokePoint> rawPoints)
         {
             if (steps.Count >= MaxTurns)
                 return TechniqueAddResult.SequenceFull;
@@ -24,7 +24,7 @@ namespace Game.Sim.Technique
             if (isCounter && counterCount >= MaxCounters)
                 return TechniqueAddResult.CounterLimitReached;
 
-            steps.Add(new TechniqueStep(steps.Count, stance, isCounter, stroke, rawPoints));
+            steps.Add(new TechniqueStep(steps.Count, isCounter, stroke, rawPoints));
             if (isCounter)
                 counterCount++;
 

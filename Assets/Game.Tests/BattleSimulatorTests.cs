@@ -61,7 +61,7 @@ namespace Game.Tests
             StrokeResult stroke = spec.Kind == Kind.Thrust
                 ? StrokeResult.Thrust(Fixed.FromInt(spec.Area))
                 : StrokeResult.Slash(Fixed.FromInt(200), Fixed.One, Fixed.Zero, Fixed.One, Fixed.Zero);
-            return new TechniqueStep(turn, Stance.Stand, spec.Kind == Kind.Counter, stroke, spec.Points);
+            return new TechniqueStep(turn, spec.Kind == Kind.Counter, stroke, spec.Points);
         }
 
         // Builds a full 10-step sequence: the given specs fill turns 0.., the rest are Filler.
@@ -128,7 +128,7 @@ namespace Game.Tests
         public void CounterStep_IgnoresItsStrokeType()
         {
             // A counter drawn as a loop is still a Counter, not a Thrust.
-            var counterAsLoop = new TechniqueStep(0, Stance.Stand, true, StrokeResult.Thrust(Fixed.FromInt(90000)), SquareLoop);
+            var counterAsLoop = new TechniqueStep(0, true, StrokeResult.Thrust(Fixed.FromInt(90000)), SquareLoop);
             Assert.AreEqual(BattleStepType.Counter, BattleSimulator.GetStepType(counterAsLoop));
         }
 

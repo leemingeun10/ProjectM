@@ -71,7 +71,7 @@ namespace Game.Client.Technique
             var sb = new StringBuilder();
             sb.AppendLine($"[TechniqueSave] 슬롯 {SelectedSlotName} 불러오기 완료 (version {version}, 스텝 {steps.Count}개): {path}");
             foreach (TechniqueStep step in steps)
-                sb.AppendLine($"턴 {step.TurnIndex + 1}: Stance={step.Stance} Counter={step.IsCounter} {FormatStroke(step.Stroke)} Points={step.RawPoints.Count}");
+                sb.AppendLine($"턴 {step.TurnIndex + 1}: Counter={step.IsCounter} {FormatStroke(step.Stroke)} Points={step.RawPoints.Count}");
 
             Debug.Log(sb.ToString());
         }

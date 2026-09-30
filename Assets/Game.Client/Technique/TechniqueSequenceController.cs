@@ -8,15 +8,11 @@ using UnityEngine.UI;
 
 namespace Game.Client.Technique
 {
-    // Bridges the stance/counter UI to StrokeInputController's completed strokes,
+    // Bridges the counter UI to StrokeInputController's completed strokes,
     // recording each one into Game.sim's TechniqueBuilder turn by turn.
     public class TechniqueSequenceController : MonoBehaviour
     {
         [SerializeField] private StrokeInputController strokeInput;
-        [SerializeField] private Toggle standToggle;
-        [SerializeField] private Toggle sitToggle;
-        [SerializeField] private Toggle advanceToggle;
-        [SerializeField] private Toggle retreatToggle;
         [SerializeField] private Toggle counterToggle;
         [SerializeField] private Text statusText;
         [SerializeField] private Button resetButton;
@@ -56,10 +52,9 @@ namespace Game.Client.Technique
 
         private void OnStrokeCompleted(StrokeResult stroke, IReadOnlyList<StrokePoint> rawPoints)
         {
-            Stance stance = GetSelectedStance();
             bool isCounter = counterToggle.isOn;
 
-            TechniqueAddResult addResult = builder.TryAddStep(stance, isCounter, stroke, rawPoints);
+            TechniqueAddResult addResult = builder.TryAddStep(isCounter, stroke, rawPoints);
             switch (addResult)
             {
                 case TechniqueAddResult.Success:
@@ -91,14 +86,6 @@ namespace Game.Client.Technique
             UpdateUi();
         }
 
-        private Stance GetSelectedStance()
-        {
-            if (sitToggle.isOn) return Stance.Sit;
-            if (advanceToggle.isOn) return Stance.Advance;
-            if (retreatToggle.isOn) return Stance.Retreat;
-            return Stance.Stand;
-        }
-
         private void UpdateUi()
         {
             statusText.text = $"턴 {builder.TurnCount} / {TechniqueBuilder.MaxTurns}\n카운터 남음: {builder.RemainingCounters}";
@@ -107,7 +94,7 @@ namespace Game.Client.Technique
 
         private static void LogStepSummary(TechniqueStep step)
         {
-            Debug.Log($"[Technique] 턴 {step.TurnIndex + 1} - Stance:{step.Stance} Counter:{step.IsCounter} {FormatStroke(step.Stroke)}");
+            Debug.Log($"[Technique] 턴 {step.TurnIndex + 1} - Counter:{step.IsCounter} {FormatStroke(step.Stroke)}");
         }
 
         private void LogSequenceComplete()
@@ -115,7 +102,7 @@ namespace Game.Client.Technique
             var sb = new StringBuilder();
             sb.AppendLine("시퀀스 완성");
             foreach (TechniqueStep step in builder.Steps)
-                sb.AppendLine($"턴 {step.TurnIndex + 1}: Stance={step.Stance} Counter={step.IsCounter} {FormatStroke(step.Stroke)}");
+                sb.AppendLine($"턴 {step.TurnIndex + 1}: Counter={step.IsCounter} {FormatStroke(step.Stroke)}");
 
             Debug.Log(sb.ToString());
         }

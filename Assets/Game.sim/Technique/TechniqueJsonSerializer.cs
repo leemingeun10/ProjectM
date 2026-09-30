@@ -10,12 +10,12 @@ namespace Game.Sim.Technique
     // so Game.sim stays dependency-free, and every Fixed is written as its raw long so a
     // save/load round trip is bit-exact (a float detour would break determinism).
     //
-    // Schema v1:
+    // Schema v2 (current):
     // {
-    //   "version": 1,
+    //   "version": 2,
     //   "steps": [
     //     {
-    //       "turnIndex": 0, "stance": "Stand", "isCounter": false,
+    //       "turnIndex": 0, "isCounter": false,
     //       "strokeType": "Slash",
     //       "length": <raw>, "startDirectionX": <raw>, "startDirectionY": <raw>,
     //       "endDirectionX": <raw>, "endDirectionY": <raw>,          (Slash only)
@@ -24,9 +24,13 @@ namespace Game.Sim.Technique
     //     }
     //   ]
     // }
+    //
+    // Schema v1 is identical plus a per-step "stance" string. The stance system was removed,
+    // so v1 files are still accepted and their "stance" field is ignored.
     public static class TechniqueJsonSerializer
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
+        public const int LegacyStanceVersion = 1;
 
         public static string Serialize(TechniqueBuilder builder)
         {
@@ -57,8 +61,9 @@ namespace Game.Sim.Technique
             Dictionary<string, object> rootObj = AsObject(root, "root");
 
             long version = GetLong(rootObj, "version", "root");
-            if (version != CurrentVersion)
-                throw new TechniqueJsonException($"Unsupported technique JSON version {version} (supported: {CurrentVersion}).");
+            if (version != CurrentVersion && version != LegacyStanceVersion)
+                throw new TechniqueJsonException(
+                    $"Unsupported technique JSON version {version} (supported: {LegacyStanceVersion}, {CurrentVersion}).");
 
             List<object> stepArray = AsArray(GetRequired(rootObj, "steps", "root"), "steps");
             var steps = new List<TechniqueStep>(stepArray.Count);
@@ -76,7 +81,6 @@ namespace Game.Sim.Technique
 
             sb.Append("    {\n");
             WriteField(sb, "turnIndex", step.TurnIndex.ToString(CultureInfo.InvariantCulture));
-            WriteField(sb, "stance", Quote(StanceToString(step.Stance)));
             WriteField(sb, "isCounter", step.IsCounter ? "true" : "false");
             WriteField(sb, "strokeType", Quote(StrokeTypeToString(stroke.Type)));
 
@@ -115,18 +119,6 @@ namespace Game.Sim.Technique
 
         // Explicit mapping instead of Enum.ToString/Parse: renaming an enum member must not
         // silently change or break the save format.
-        private static string StanceToString(Stance stance)
-        {
-            switch (stance)
-            {
-                case Stance.Stand: return "Stand";
-                case Stance.Sit: return "Sit";
-                case Stance.Advance: return "Advance";
-                case Stance.Retreat: return "Retreat";
-                default: throw new ArgumentOutOfRangeException(nameof(stance), stance, null);
-            }
-        }
-
         private static string StrokeTypeToString(StrokeType type)
         {
             switch (type)
@@ -145,7 +137,6 @@ namespace Game.Sim.Technique
             if (turnIndex < 0 || turnIndex > int.MaxValue)
                 throw new TechniqueJsonException($"{path}.turnIndex out of range: {turnIndex}");
 
-            Stance stance = ParseStance(GetString(obj, "stance", path), path);
             bool isCounter = GetBool(obj, "isCounter", path);
             string strokeTypeName = GetString(obj, "strokeType", path);
 
@@ -176,19 +167,7 @@ namespace Game.Sim.Technique
                 points[i] = new StrokePoint(GetLong(p, "x", pointPath), GetLong(p, "y", pointPath));
             }
 
-            return new TechniqueStep((int)turnIndex, stance, isCounter, stroke, points);
-        }
-
-        private static Stance ParseStance(string s, string path)
-        {
-            switch (s)
-            {
-                case "Stand": return Stance.Stand;
-                case "Sit": return Stance.Sit;
-                case "Advance": return Stance.Advance;
-                case "Retreat": return Stance.Retreat;
-                default: throw new TechniqueJsonException($"{path}.stance has unknown value \"{s}\".");
-            }
+            return new TechniqueStep((int)turnIndex, isCounter, stroke, points);
         }
 
         private static object GetRequired(Dictionary<string, object> obj, string key, string path)

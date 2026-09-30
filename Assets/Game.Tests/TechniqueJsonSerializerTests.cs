@@ -13,31 +13,31 @@ namespace Game.Tests
         {
             var builder = new TechniqueBuilder();
 
-            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(Stance.Stand, false,
+            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(false,
                 StrokeResult.Slash(Fixed.FromRaw(123456), Fixed.FromRaw(707), Fixed.FromRaw(-707), Fixed.FromRaw(-1000), Fixed.FromRaw(1)),
                 new List<StrokePoint> { new StrokePoint(0, 0), new StrokePoint(1001, -2002), new StrokePoint(3003, 4004) }));
 
-            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(Stance.Sit, true,
+            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(true,
                 StrokeResult.Thrust(Fixed.FromRaw(98765432109L)),
                 new List<StrokePoint> { new StrokePoint(-1, -1), new StrokePoint(500, 999), new StrokePoint(-1, 0), new StrokePoint(-1, -1) }));
 
-            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(Stance.Advance, false,
+            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(false,
                 StrokeResult.Slash(Fixed.FromRaw(1), Fixed.Zero, Fixed.One, Fixed.FromRaw(333), Fixed.FromRaw(-943)),
                 new List<StrokePoint> { new StrokePoint(long.MaxValue / 4, long.MinValue / 4), new StrokePoint(7, 7) }));
 
-            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(Stance.Retreat, false,
+            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(false,
                 StrokeResult.Thrust(Fixed.Zero),
                 new List<StrokePoint> { new StrokePoint(10, 20) }));
 
-            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(Stance.Retreat, true,
+            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(true,
                 StrokeResult.Slash(Fixed.FromRaw(4_000_000_001L), Fixed.FromRaw(-1), Fixed.FromRaw(-999), Fixed.FromRaw(999), Fixed.FromRaw(-1)),
                 new List<StrokePoint> { new StrokePoint(-3, 4), new StrokePoint(5, -6) }));
 
-            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(Stance.Stand, false,
+            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(false,
                 StrokeResult.Slash(Fixed.FromInt(42), Fixed.One, Fixed.Zero, Fixed.One, Fixed.Zero),
                 new List<StrokePoint>()));
 
-            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(Stance.Sit, false,
+            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(false,
                 StrokeResult.Thrust(Fixed.FromRaw(12345)),
                 new List<StrokePoint> { new StrokePoint(1, 2), new StrokePoint(3, 4), new StrokePoint(5, 6), new StrokePoint(1, 2) }));
 
@@ -54,7 +54,6 @@ namespace Game.Tests
                 string at = $"step {i}";
 
                 Assert.AreEqual(e.TurnIndex, a.TurnIndex, at + " turnIndex");
-                Assert.AreEqual(e.Stance, a.Stance, at + " stance");
                 Assert.AreEqual(e.IsCounter, a.IsCounter, at + " isCounter");
                 Assert.AreEqual(e.Stroke.Type, a.Stroke.Type, at + " strokeType");
                 Assert.AreEqual(e.Stroke.Length.Raw, a.Stroke.Length.Raw, at + " length");
@@ -86,18 +85,45 @@ namespace Game.Tests
         }
 
         [Test]
-        public void Version_IsWrittenAndParsedAsOne()
+        public void Version_IsWrittenAndParsedAsTwo()
         {
             string json = TechniqueJsonSerializer.Serialize(BuildMixedBuilder());
 
-            StringAssert.Contains("\"version\": 1", json);
-            Assert.AreEqual(1, TechniqueJsonSerializer.Deserialize(json).version);
+            StringAssert.Contains("\"version\": 2", json);
+            Assert.AreEqual(2, TechniqueJsonSerializer.Deserialize(json).version);
+        }
+
+        [Test]
+        public void Serialize_DoesNotWriteStance()
+        {
+            string json = TechniqueJsonSerializer.Serialize(BuildMixedBuilder());
+
+            StringAssert.DoesNotContain("stance", json);
+        }
+
+        [Test]
+        public void LegacyV1WithStance_LoadsAndIgnoresStance()
+        {
+            const string v1 =
+                "{\"version\": 1, \"steps\": [" +
+                "{\"turnIndex\": 0, \"stance\": \"Sit\", \"isCounter\": true, \"strokeType\": \"Thrust\", \"area\": 5000," +
+                " \"rawPoints\": [{\"x\": 1, \"y\": 2}]}]}";
+
+            (int version, List<TechniqueStep> steps) = TechniqueJsonSerializer.Deserialize(v1);
+
+            Assert.AreEqual(1, version);
+            Assert.AreEqual(1, steps.Count);
+            Assert.IsTrue(steps[0].IsCounter);
+            Assert.AreEqual(StrokeType.Thrust, steps[0].Stroke.Type);
+            Assert.AreEqual(5000, steps[0].Stroke.Area.Raw);
+            Assert.AreEqual(2, steps[0].RawPoints[0].Y.Raw);
         }
 
         [Test]
         public void UnsupportedVersion_Throws()
         {
-            Assert.Throws<TechniqueJsonException>(() => TechniqueJsonSerializer.Deserialize("{\"version\": 2, \"steps\": []}"));
+            Assert.Throws<TechniqueJsonException>(() => TechniqueJsonSerializer.Deserialize("{\"version\": 3, \"steps\": []}"));
+            Assert.Throws<TechniqueJsonException>(() => TechniqueJsonSerializer.Deserialize("{\"version\": 0, \"steps\": []}"));
             Assert.Throws<TechniqueJsonException>(() => TechniqueJsonSerializer.Deserialize("{\"steps\": []}"));
         }
 
@@ -112,8 +138,8 @@ namespace Game.Tests
         public void StepWithEmptyRawPoints_RoundTrips()
         {
             var builder = new TechniqueBuilder();
-            builder.TryAddStep(Stance.Sit, false, StrokeResult.Thrust(Fixed.FromRaw(777)), new List<StrokePoint>());
-            builder.TryAddStep(Stance.Advance, true,
+            builder.TryAddStep(false, StrokeResult.Thrust(Fixed.FromRaw(777)), new List<StrokePoint>());
+            builder.TryAddStep(true,
                 StrokeResult.Slash(Fixed.FromRaw(5), Fixed.One, Fixed.Zero, Fixed.Zero, Fixed.One), null);
 
             (_, List<TechniqueStep> steps) = TechniqueJsonSerializer.Deserialize(TechniqueJsonSerializer.Serialize(builder));
@@ -134,7 +160,7 @@ namespace Game.Tests
             (int version, List<TechniqueStep> steps) result = default;
             Assert.DoesNotThrow(() => result = TechniqueJsonSerializer.Deserialize(json));
 
-            Assert.AreEqual(1, result.version);
+            Assert.AreEqual(TechniqueJsonSerializer.CurrentVersion, result.version);
             Assert.IsNotNull(result.steps);
             Assert.AreEqual(0, result.steps.Count);
         }

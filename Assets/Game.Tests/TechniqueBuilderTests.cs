@@ -19,7 +19,7 @@ namespace Game.Tests
             var builder = new TechniqueBuilder();
             for (int i = 0; i < TechniqueBuilder.MaxTurns; i++)
             {
-                TechniqueAddResult result = builder.TryAddStep(Stance.Stand, false, DummyStroke(), DummyPoints());
+                TechniqueAddResult result = builder.TryAddStep(false, DummyStroke(), DummyPoints());
                 Assert.AreEqual(TechniqueAddResult.Success, result);
             }
 
@@ -32,9 +32,9 @@ namespace Game.Tests
         {
             var builder = new TechniqueBuilder();
             for (int i = 0; i < TechniqueBuilder.MaxTurns; i++)
-                builder.TryAddStep(Stance.Stand, false, DummyStroke(), DummyPoints());
+                builder.TryAddStep(false, DummyStroke(), DummyPoints());
 
-            TechniqueAddResult result = builder.TryAddStep(Stance.Stand, false, DummyStroke(), DummyPoints());
+            TechniqueAddResult result = builder.TryAddStep(false, DummyStroke(), DummyPoints());
 
             Assert.AreEqual(TechniqueAddResult.SequenceFull, result);
             Assert.AreEqual(TechniqueBuilder.MaxTurns, builder.TurnCount);
@@ -45,11 +45,11 @@ namespace Game.Tests
         {
             var builder = new TechniqueBuilder();
 
-            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(Stance.Stand, true, DummyStroke(), DummyPoints()));
-            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(Stance.Stand, true, DummyStroke(), DummyPoints()));
+            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(true, DummyStroke(), DummyPoints()));
+            Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(true, DummyStroke(), DummyPoints()));
             Assert.AreEqual(0, builder.RemainingCounters);
 
-            TechniqueAddResult result = builder.TryAddStep(Stance.Stand, true, DummyStroke(), DummyPoints());
+            TechniqueAddResult result = builder.TryAddStep(true, DummyStroke(), DummyPoints());
 
             Assert.AreEqual(TechniqueAddResult.CounterLimitReached, result);
             Assert.AreEqual(2, builder.TurnCount);
@@ -60,7 +60,7 @@ namespace Game.Tests
         {
             var builder = new TechniqueBuilder();
             for (int i = 0; i < 5; i++)
-                builder.TryAddStep(Stance.Advance, false, DummyStroke(), DummyPoints());
+                builder.TryAddStep(false, DummyStroke(), DummyPoints());
 
             for (int i = 0; i < builder.TurnCount; i++)
                 Assert.AreEqual(i, builder.Steps[i].TurnIndex);
@@ -70,10 +70,10 @@ namespace Game.Tests
         public void ResetClearsStepsAndRestoresCounters()
         {
             var builder = new TechniqueBuilder();
-            builder.TryAddStep(Stance.Stand, false, DummyStroke(), DummyPoints());
-            builder.TryAddStep(Stance.Sit, true, DummyStroke(), DummyPoints());
-            builder.TryAddStep(Stance.Advance, false, DummyStroke(), DummyPoints());
-            builder.TryAddStep(Stance.Retreat, true, DummyStroke(), DummyPoints());
+            builder.TryAddStep(false, DummyStroke(), DummyPoints());
+            builder.TryAddStep(true, DummyStroke(), DummyPoints());
+            builder.TryAddStep(false, DummyStroke(), DummyPoints());
+            builder.TryAddStep(true, DummyStroke(), DummyPoints());
             Assert.AreEqual(4, builder.TurnCount);
             Assert.AreEqual(0, builder.RemainingCounters);
 
@@ -90,7 +90,7 @@ namespace Game.Tests
         {
             var builder = new TechniqueBuilder();
             for (int i = 0; i < TechniqueBuilder.MaxTurns; i++)
-                builder.TryAddStep(Stance.Stand, i < TechniqueBuilder.MaxCounters, DummyStroke(), DummyPoints());
+                builder.TryAddStep(i < TechniqueBuilder.MaxCounters, DummyStroke(), DummyPoints());
             Assert.IsTrue(builder.IsFull);
             Assert.AreEqual(0, builder.RemainingCounters);
 
@@ -99,7 +99,7 @@ namespace Game.Tests
             for (int i = 0; i < TechniqueBuilder.MaxTurns; i++)
             {
                 bool isCounter = i < TechniqueBuilder.MaxCounters;
-                Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(Stance.Stand, isCounter, DummyStroke(), DummyPoints()));
+                Assert.AreEqual(TechniqueAddResult.Success, builder.TryAddStep(isCounter, DummyStroke(), DummyPoints()));
             }
 
             Assert.AreEqual(TechniqueBuilder.MaxTurns, builder.TurnCount);
