@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using Game.Sim.Stroke;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace Game.Client.Stroke
 {
@@ -19,6 +21,8 @@ namespace Game.Client.Stroke
         public event Action<StrokeResult, IReadOnlyList<StrokePoint>> StrokeCompleted;
 
         private readonly List<Vector2> localPoints = new List<Vector2>();
+        private readonly List<RaycastResult> uiHits = new List<RaycastResult>();
+        private PointerEventData pointerEventData;
         private bool isDragging;
 
         private void Update()
@@ -29,7 +33,11 @@ namespace Game.Client.Stroke
 
             if (pointer.press.wasPressedThisFrame)
             {
-                BeginStroke(pointer.position.ReadValue());
+                // A press that starts on a button/toggle belongs to the UI, not to a stroke;
+                // otherwise a slight finger drift while tapping gets recorded as a turn.
+                Vector2 pressPos = pointer.position.ReadValue();
+                if (!IsOverInteractableUi(pressPos))
+                    BeginStroke(pressPos);
             }
             else if (isDragging && pointer.press.wasReleasedThisFrame)
             {
@@ -40,6 +48,28 @@ namespace Game.Client.Stroke
             {
                 AppendPoint(pointer.position.ReadValue());
             }
+        }
+
+        // Only Selectables count: a plain full-screen Image (or the stroke line itself) may be a
+        // raycast target, so EventSystem.IsPointerOverGameObject() alone would block every stroke.
+        private bool IsOverInteractableUi(Vector2 screenPos)
+        {
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null)
+                return false;
+
+            pointerEventData ??= new PointerEventData(eventSystem);
+            pointerEventData.Reset();
+            pointerEventData.position = screenPos;
+
+            uiHits.Clear();
+            eventSystem.RaycastAll(pointerEventData, uiHits);
+            foreach (RaycastResult hit in uiHits)
+            {
+                if (hit.gameObject.GetComponentInParent<Selectable>() != null)
+                    return true;
+            }
+            return false;
         }
 
         private void BeginStroke(Vector2 screenPos)
