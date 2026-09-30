@@ -1,23 +1,38 @@
-using System.Collections;
 using System.Collections.Generic;
 using Game.Client.Stroke;
+using Game.Client.Technique;
 using Game.Sim.Stroke;
 using UnityEngine;
 
 namespace Game.Client.Battle
 {
-    // Plays the Slash/Thrust clip matching a completed stroke, then returns to Idle once the
-    // clip has finished. A new stroke mid-swing restarts playback from the new clip.
+    // Drawing preview: plays the Slash/Thrust motion matching a completed stroke on character A.
+    // A new stroke mid-swing restarts playback from the new clip.
+    //
+    // When the counter toggle is on, plays Guard -> Slash instead. This is only a preview of the
+    // motion for a stroke drawn in counter mode, NOT a counter success/failure judgement.
+    // Battle playback is driven separately by BattleReplayController.
     public class StrokeAnimationPlayer : MonoBehaviour
     {
-        private const string IdleState = "Idle";
-        private const string SlashState = "Slash";
-        private const string ThrustState = "Thrust";
-
         [SerializeField] private StrokeInputController strokeInput;
-        [SerializeField] private Animator animator;
+        [SerializeField] private CharacterMotionPlayer motionPlayer;
+        [SerializeField] private TechniqueSequenceController sequenceController;
 
-        private Coroutine playRoutine;
+        // Fail once, loudly, on unwired inspector fields instead of throwing on every stroke.
+        // Disabling in Awake means OnEnable/OnDisable never run for this component.
+        private void Awake()
+        {
+            var missing = new List<string>();
+            if (strokeInput == null) missing.Add(nameof(strokeInput));
+            if (motionPlayer == null) missing.Add(nameof(motionPlayer));
+            if (sequenceController == null) missing.Add(nameof(sequenceController));
+
+            if (missing.Count == 0)
+                return;
+
+            Debug.LogError($"[StrokeAnimationPlayer] '{name}' has unassigned field(s): {string.Join(", ", missing)}. Component disabled.", this);
+            enabled = false;
+        }
 
         private void OnEnable()
         {
@@ -31,31 +46,11 @@ namespace Game.Client.Battle
 
         private void OnStrokeCompleted(StrokeResult result, IReadOnlyList<StrokePoint> points)
         {
-            string state = result.Type == StrokeType.Thrust ? ThrustState : SlashState;
-
-            if (playRoutine != null)
-                StopCoroutine(playRoutine);
-            playRoutine = StartCoroutine(PlayThenIdle(state));
-        }
-
-        private IEnumerator PlayThenIdle(string state)
-        {
-            animator.Play(state, 0, 0f);
-            yield return new WaitForSeconds(GetClipLength(state));
-            animator.Play(IdleState, 0, 0f);
-            playRoutine = null;
-        }
-
-        private float GetClipLength(string clipName)
-        {
-            foreach (AnimationClip clip in animator.runtimeAnimatorController.animationClips)
-            {
-                if (clip.name == clipName)
-                    return clip.length;
-            }
-
-            Debug.LogWarning($"[StrokeAnimationPlayer] Clip '{clipName}' not found on {animator.name}'s controller.");
-            return 0f;
+            // Counter preview ignores the stroke type: always Guard then Slash.
+            if (sequenceController.IsCounterOn)
+                motionPlayer.Play(CharacterMotionPlayer.GuardState, CharacterMotionPlayer.SlashState);
+            else
+                motionPlayer.Play(result.Type == StrokeType.Thrust ? CharacterMotionPlayer.ThrustState : CharacterMotionPlayer.SlashState);
         }
     }
 }

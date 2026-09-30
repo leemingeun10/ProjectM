@@ -23,7 +23,13 @@ namespace Game.Client.Technique
 
         private readonly TechniqueBuilder builder = new TechniqueBuilder();
 
+        private bool counterResetPending;
+
         public TechniqueBuilder Builder => builder;
+
+        // Live counter toggle state. Stays true for the rest of the frame in which a stroke
+        // completes, so other StrokeCompleted listeners see it regardless of subscription order.
+        public bool IsCounterOn => counterToggle.isOn;
 
         private void OnEnable()
         {
@@ -42,6 +48,7 @@ namespace Game.Client.Technique
         public void ResetSequence()
         {
             builder.Reset();
+            counterResetPending = false;
             counterToggle.isOn = false;
             UpdateUi();
             Debug.Log("[Technique] 시퀀스 초기화됨");
@@ -69,6 +76,17 @@ namespace Game.Client.Technique
             }
 
             // Counter mode applies to a single stroke; the player re-enables it per turn.
+            // Cleared in LateUpdate so every StrokeCompleted listener this frame reads IsCounterOn intact.
+            counterResetPending = true;
+            UpdateUi();
+        }
+
+        private void LateUpdate()
+        {
+            if (!counterResetPending)
+                return;
+
+            counterResetPending = false;
             counterToggle.isOn = false;
             UpdateUi();
         }
