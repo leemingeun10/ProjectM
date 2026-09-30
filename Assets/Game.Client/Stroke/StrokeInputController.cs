@@ -71,6 +71,7 @@ namespace Game.Client.Stroke
                 List<StrokePoint> simPoints = ToSimPoints(resampled);
                 StrokeResult result = StrokeAnalyzer.Analyze(simPoints);
                 LogResult(result);
+                LogRawRange(simPoints); // TEMP: coordinate range check, remove after normalization is decided
                 StrokeCompleted?.Invoke(result, simPoints);
             }
 
@@ -89,6 +90,20 @@ namespace Game.Client.Stroke
                 simPoints.Add(new StrokePoint(rawX, rawY));
             }
             return simPoints;
+        }
+
+        // TEMP: prints the raw fixed-point bounding box of a stroke (canvasRect local units * Fixed.Scale).
+        private static void LogRawRange(List<StrokePoint> points)
+        {
+            long minX = long.MaxValue, maxX = long.MinValue, minY = long.MaxValue, maxY = long.MinValue;
+            foreach (StrokePoint p in points)
+            {
+                minX = Math.Min(minX, p.X.Raw);
+                maxX = Math.Max(maxX, p.X.Raw);
+                minY = Math.Min(minY, p.Y.Raw);
+                maxY = Math.Max(maxY, p.Y.Raw);
+            }
+            Debug.Log($"[StrokeRange] raw X: {minX} ~ {maxX}, raw Y: {minY} ~ {maxY} (local X: {minX / (float)Fixed.Scale:F1} ~ {maxX / (float)Fixed.Scale:F1}, local Y: {minY / (float)Fixed.Scale:F1} ~ {maxY / (float)Fixed.Scale:F1})");
         }
 
         private static void LogResult(StrokeResult result)
