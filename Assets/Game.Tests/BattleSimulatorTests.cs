@@ -53,6 +53,9 @@ namespace Game.Tests
         private static Spec Thrust(long area, StrokePoint[] points = null) => new Spec(Kind.Thrust, points ?? SquareLoop, area);
         private static Spec Counter(StrokePoint[] points) => new Spec(Kind.Counter, points);
 
+        // Area that deals exactly `damage`, so these tests don't hard-code the divisor value.
+        private static long AreaFor(int damage) => (long)damage * BattleConstants.ThrustDamageDivisor;
+
         // Counter vs Counter always deals 0, so it is a neutral filler for the unused turns.
         private static readonly Spec Filler = Counter(FarSlash);
 
@@ -135,29 +138,28 @@ namespace Game.Tests
         [Test]
         public void ThrustVsSlash_Intercepted_ThrustTakesOnlySlashDamage()
         {
-            AssertTurn(FirstTurn(Thrust(40000), Slash(SlashThroughSquare)),
+            AssertTurn(FirstTurn(Thrust(AreaFor(40)), Slash(SlashThroughSquare)),
                 BattleStepType.Thrust, BattleStepType.Slash, 10, 0, TurnReason.CrossContact);
 
-            AssertTurn(FirstTurn(Slash(SlashThroughSquare), Thrust(40000)),
+            AssertTurn(FirstTurn(Slash(SlashThroughSquare), Thrust(AreaFor(40))),
                 BattleStepType.Slash, BattleStepType.Thrust, 0, 10, TurnReason.CrossContact);
         }
 
         [Test]
         public void ThrustVsSlash_NotIntercepted_SlashTakesAreaDamage()
         {
-            // Area 40000 / 1000 = 40.
-            AssertTurn(FirstTurn(Thrust(40000), Slash(FarSlash)),
+            AssertTurn(FirstTurn(Thrust(AreaFor(40)), Slash(FarSlash)),
                 BattleStepType.Thrust, BattleStepType.Slash, 0, 40, TurnReason.Miss);
 
-            AssertTurn(FirstTurn(Slash(FarSlash), Thrust(40000)),
+            AssertTurn(FirstTurn(Slash(FarSlash), Thrust(AreaFor(40))),
                 BattleStepType.Slash, BattleStepType.Thrust, 40, 0, TurnReason.Miss);
         }
 
         [Test]
         public void ThrustVsThrust_EachTakesTheOthersAreaDamage()
         {
-            // A: 40000 -> 40 dealt to B. B: 25999 -> 25 (truncated) dealt to A.
-            AssertTurn(FirstTurn(Thrust(40000), Thrust(25999)),
+            // A deals 40 to B. B's area is one unit short of 26 damage, so it truncates to 25.
+            AssertTurn(FirstTurn(Thrust(AreaFor(40)), Thrust(AreaFor(26) - 1)),
                 BattleStepType.Thrust, BattleStepType.Thrust, 25, 40, TurnReason.Unconditional);
         }
 
@@ -165,11 +167,28 @@ namespace Game.Tests
         public void ThrustVsCounter_CounterAlwaysTakesAreaDamage()
         {
             // Even a counter drawn right through the thrust loop cannot stop it.
-            AssertTurn(FirstTurn(Thrust(30000), Counter(SlashThroughSquare)),
+            AssertTurn(FirstTurn(Thrust(AreaFor(30)), Counter(SlashThroughSquare)),
                 BattleStepType.Thrust, BattleStepType.Counter, 0, 30, TurnReason.Unconditional);
 
-            AssertTurn(FirstTurn(Counter(FarSlash), Thrust(30000)),
+            AssertTurn(FirstTurn(Counter(FarSlash), Thrust(AreaFor(30))),
                 BattleStepType.Counter, BattleStepType.Thrust, 30, 0, TurnReason.Unconditional);
+        }
+
+        [Test]
+        public void ThrustDamage_Radius150LoopMatchesSlashDamage()
+        {
+            // Calibration anchor: a radius-150 loop sampled like the client does (24 points, closed)
+            // must deal the same as a basic slash.
+            int[] cos24 = { 1000, 966, 866, 707, 500, 259, 0, -259, -500, -707, -866, -966,
+                            -1000, -966, -866, -707, -500, -259, 0, 259, 500, 707, 866, 966 };
+            var loop = new StrokePoint[25];
+            for (int k = 0; k < 24; k++)
+                loop[k] = new StrokePoint(cos24[k] * 150L, cos24[(k + 18) % 24] * 150L);
+            loop[24] = loop[0];
+
+            StrokeResult stroke = StrokeAnalyzer.Analyze(loop);
+            Assert.AreEqual(StrokeType.Thrust, stroke.Type);
+            Assert.AreEqual(BattleConstants.SlashDamage, BattleSimulator.ThrustDamage(new TechniqueStep(0, false, stroke, loop)));
         }
 
         [Test]
@@ -185,7 +204,7 @@ namespace Game.Tests
         public void KnockoutMidBattle_StopsImmediately()
         {
             // 60 damage per turn to B: HP 100 -> 40 -> -20, so the battle ends on turn 1.
-            List<TechniqueStep> a = Sequence(Thrust(60000), Thrust(60000), Thrust(60000));
+            List<TechniqueStep> a = Sequence(Thrust(AreaFor(60)), Thrust(AreaFor(60)), Thrust(AreaFor(60)));
             List<TechniqueStep> b = Sequence(Counter(FarSlash), Counter(FarSlash), Counter(FarSlash));
 
             BattleResult result = BattleSimulator.Simulate(a, b);
