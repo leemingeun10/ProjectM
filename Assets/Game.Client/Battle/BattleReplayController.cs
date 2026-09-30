@@ -43,6 +43,7 @@ namespace Game.Client.Battle
         [SerializeField] private ImpactFlash impactFlash;
 
         private BattleResult currentResult;
+        private string currentResultNote;
         private Coroutine replayRoutine;
         private bool isPaused;
         private bool isFinished;
@@ -85,9 +86,11 @@ namespace Game.Client.Battle
         }
 
         // Replaces any replay in progress with the new result and plays it from the start.
-        public void StartReplay(BattleResult result)
+        // resultNote, if given, is shown under the outcome when the replay ends.
+        public void StartReplay(BattleResult result, string resultNote = null)
         {
             currentResult = result;
+            currentResultNote = resultNote;
             replayPanel.SetActive(true);
             SetWorldHpVisible(true);
             Restart();
@@ -204,7 +207,9 @@ namespace Game.Client.Battle
                 cameraRig.SetFocused(false);
             }
 
-            resultText.text = DescribeOutcome(result.Outcome);
+            resultText.text = string.IsNullOrEmpty(currentResultNote)
+                ? DescribeOutcome(result.Outcome)
+                : $"{DescribeOutcome(result.Outcome)}\n<size=40>{currentResultNote}</size>";
             resultText.gameObject.SetActive(true);
             isFinished = true;
             replayRoutine = null;
