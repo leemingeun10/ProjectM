@@ -50,6 +50,24 @@ namespace Game.Client.Technique
             Debug.Log("[Technique] 시퀀스 초기화됨");
         }
 
+        // Replaces the current sequence with saved steps, replayed through TryAddStep so the
+        // counter budget is rebuilt the same way as when they were drawn.
+        public void LoadSteps(IReadOnlyList<TechniqueStep> steps)
+        {
+            builder.Reset();
+            counterResetPending = false;
+            counterToggle.isOn = false;
+            foreach (TechniqueStep step in steps)
+            {
+                if (builder.TryAddStep(step.IsCounter, step.Stroke, step.RawPoints) != TechniqueAddResult.Success)
+                {
+                    Debug.LogWarning($"[Technique] 저장된 스텝 {step.TurnIndex + 1}을 복원하지 못해 이후 스텝은 무시됩니다.");
+                    break;
+                }
+            }
+            UpdateUi();
+        }
+
         private void OnStrokeCompleted(StrokeResult stroke, IReadOnlyList<StrokePoint> rawPoints)
         {
             bool isCounter = counterToggle.isOn;

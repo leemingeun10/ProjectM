@@ -14,8 +14,9 @@ using UnityEngine.UI;
 namespace Game.Client.Stage
 {
     // PvE stage list: one button per StageCatalog entry, locked ones greyed out. Picking a stage
-    // pits the player's slot A technique against that stage's seeded AI, replays the fight, and
-    // records the clear on a win. Game.sim decides everything; this only wires UI and files.
+    // pits one of the player's complete technique slots (asking which when there are several)
+    // against that stage's seeded AI, replays the fight, and records the clear on a win.
+    // Game.sim decides everything; this only wires UI and files.
     public class StageSelectController : MonoBehaviour
     {
         private static readonly Color LockedLabelColor = new Color(0.2f, 0.2f, 0.2f, 0.35f);
@@ -30,10 +31,16 @@ namespace Game.Client.Stage
         [SerializeField] private Text messageText;
         [SerializeField] private StrokeInputController strokeInput;
         [SerializeField] private BattleReplayController replayController;
+        // Shown over the stage list when more than one slot is complete.
+        [SerializeField] private GameObject slotPickPanel;
+        // One entry per slot (index 0 = slot 1); each needs a Text child.
+        [SerializeField] private Button[] slotPickButtons = new Button[TechniqueSlotStore.SlotCount];
+        [SerializeField] private Button slotPickCancelButton;
 
         private readonly List<Button> stageButtons = new List<Button>();
         private ProgressData progress;
         private Color unlockedLabelColor;
+        private int pendingStageIndex;
 
         private void Awake()
         {
@@ -51,6 +58,12 @@ namespace Game.Client.Stage
                 stageButtons.Add(button);
             }
 
+            for (int i = 0; i < slotPickButtons.Length; i++)
+            {
+                int slot = i + 1;
+                slotPickButtons[i].onClick.AddListener(() => OnSlotPicked(slot));
+            }
+
             messageText.text = string.Empty;
             RefreshStageButtons();
             SetPanelOpen(false);
@@ -60,12 +73,14 @@ namespace Game.Client.Stage
         {
             openButton.onClick.AddListener(OpenPanel);
             closeButton.onClick.AddListener(ClosePanel);
+            slotPickCancelButton.onClick.AddListener(CloseSlotPick);
         }
 
         private void OnDisable()
         {
             openButton.onClick.RemoveListener(OpenPanel);
             closeButton.onClick.RemoveListener(ClosePanel);
+            slotPickCancelButton.onClick.RemoveListener(CloseSlotPick);
         }
 
         private void OpenPanel() => SetPanelOpen(true);
@@ -76,6 +91,7 @@ namespace Game.Client.Stage
         private void SetPanelOpen(bool open)
         {
             stagePanel.SetActive(open);
+            slotPickPanel.SetActive(false);
             strokeInput.enabled = !open;
         }
 
@@ -103,19 +119,56 @@ namespace Game.Client.Stage
 
         private void PlayStage(int stageIndex)
         {
-            if (!PlayerTechniqueSlot.TryLoad(out List<TechniqueStep> playerSteps))
+            var completeSlots = new List<int>();
+            for (int slot = 1; slot <= TechniqueSlotStore.SlotCount; slot++)
             {
-                messageText.text = "슬롯 A에 저장된 무공이 없습니다.";
+                if (TechniqueSlotStore.GetStatus(slot).State == TechniqueSlotState.Complete)
+                    completeSlots.Add(slot);
+            }
+
+            if (completeSlots.Count == 0)
+            {
+                messageText.text = $"완성된 무공 슬롯이 없습니다.\n{BattleSimulator.TurnsPerBattle}턴을 채워 슬롯에 저장하세요.";
                 return;
             }
 
+            if (completeSlots.Count == 1)
+            {
+                PlayStageWithSlot(stageIndex, completeSlots[0]);
+                return;
+            }
+
+            pendingStageIndex = stageIndex;
+            for (int i = 0; i < slotPickButtons.Length; i++)
+            {
+                int slot = i + 1;
+                slotPickButtons[i].gameObject.SetActive(completeSlots.Contains(slot));
+                slotPickButtons[i].GetComponentInChildren<Text>(true).text = $"슬롯 {slot}";
+            }
+            messageText.text = string.Empty;
+            slotPickPanel.SetActive(true);
+        }
+
+        private void OnSlotPicked(int slot)
+        {
+            slotPickPanel.SetActive(false);
+            PlayStageWithSlot(pendingStageIndex, slot);
+        }
+
+        private void CloseSlotPick() => slotPickPanel.SetActive(false);
+
+        private void PlayStageWithSlot(int stageIndex, int slot)
+        {
+            // Re-checked on load: the file may have changed since the status scan.
             // BattleSimulator requires a full sequence; report it here instead of letting it throw.
-            if (playerSteps.Count != BattleSimulator.TurnsPerBattle)
+            if (!TechniqueSlotStore.TryLoad(slot, out List<TechniqueStep> playerSteps)
+                || playerSteps.Count != BattleSimulator.TurnsPerBattle)
             {
-                messageText.text = $"슬롯 A 무공이 {playerSteps.Count}턴입니다. {BattleSimulator.TurnsPerBattle}턴을 채워 저장하세요.";
+                messageText.text = $"슬롯 {slot} 무공을 불러올 수 없습니다.";
                 return;
             }
 
+            Debug.Log($"[Stage] 스테이지 {stageIndex}: 슬롯 {slot} 무공으로 전투");
             StageDefinition stage = StageCatalog.Get(stageIndex);
             List<TechniqueStep> aiSteps = AiTechniqueGenerator.Generate(stage.Difficulty, stage.Seed);
             BattleResult result = BattleSimulator.Simulate(playerSteps, aiSteps);
