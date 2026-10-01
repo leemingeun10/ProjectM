@@ -53,8 +53,13 @@ namespace Game.Tests
         private static Spec Thrust(long area, StrokePoint[] points = null) => new Spec(Kind.Thrust, points ?? SquareLoop, area);
         private static Spec Counter(StrokePoint[] points) => new Spec(Kind.Counter, points);
 
-        // Area that deals exactly `damage`, so these tests don't hard-code the divisor value.
-        private static long AreaFor(int damage) => (long)damage * BattleConstants.ThrustDamageDivisor;
+        // Smallest area that deals exactly `damage` (sqrt(area) == damage * divisor), so these tests
+        // don't hard-code the divisor value.
+        private static long AreaFor(int damage)
+        {
+            long root = (long)damage * BattleConstants.ThrustSqrtDivisor;
+            return root * root;
+        }
 
         // Counter vs Counter always deals 0, so it is a neutral filler for the unused turns.
         private static readonly Spec Filler = Counter(FarSlash);
@@ -158,7 +163,8 @@ namespace Game.Tests
         [Test]
         public void ThrustVsThrust_EachTakesTheOthersAreaDamage()
         {
-            // A deals 40 to B. B's area is one unit short of 26 damage, so it truncates to 25.
+            // A deals 40 to B. B's area is one unit short of 26 damage: its integer sqrt drops to
+            // 26 * divisor - 1, which truncates to 25.
             AssertTurn(FirstTurn(Thrust(AreaFor(40)), Thrust(AreaFor(26) - 1)),
                 BattleStepType.Thrust, BattleStepType.Thrust, 25, 40, TurnReason.Unconditional);
         }
@@ -189,6 +195,16 @@ namespace Game.Tests
             StrokeResult stroke = StrokeAnalyzer.Analyze(loop);
             Assert.AreEqual(StrokeType.Thrust, stroke.Type);
             Assert.AreEqual(BattleConstants.SlashDamage, BattleSimulator.ThrustDamage(new TechniqueStep(0, false, stroke, loop)));
+        }
+
+        [Test]
+        public void ThrustDamage_ScalesWithRadiusNotArea()
+        {
+            // 9x the area (3x the radius) deals 3x the damage, not 9x.
+            var baseLoop = new TechniqueStep(0, false, StrokeResult.Thrust(Fixed.FromInt(AreaFor(10))), SquareLoop);
+            var tripleRadius = new TechniqueStep(0, false, StrokeResult.Thrust(Fixed.FromInt(AreaFor(10) * 9)), SquareLoop);
+            Assert.AreEqual(10, BattleSimulator.ThrustDamage(baseLoop));
+            Assert.AreEqual(30, BattleSimulator.ThrustDamage(tripleRadius));
         }
 
         [Test]

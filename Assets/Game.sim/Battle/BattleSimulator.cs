@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Game.Sim.Common;
 using Game.Sim.Stroke;
 using Game.Sim.Technique;
 
@@ -49,7 +50,8 @@ namespace Game.Sim.Battle
         public static int ThrustDamage(TechniqueStep thrustStep)
         {
             // Area is in whole sim units (canvas px^2); Raw carries Fixed.Scale extra digits.
-            long damage = thrustStep.Stroke.Area.Raw / (Fixed.Scale * BattleConstants.ThrustDamageDivisor);
+            long area = thrustStep.Stroke.Area.Raw / Fixed.Scale;
+            long damage = IntegerMath.IntegerSqrt(area) / BattleConstants.ThrustSqrtDivisor;
             return damage > int.MaxValue ? int.MaxValue : (int)damage;
         }
 
