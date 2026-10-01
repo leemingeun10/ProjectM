@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Game.Sim.Battle;
@@ -44,6 +45,7 @@ namespace Game.Client.Battle
 
         private BattleResult currentResult;
         private string currentResultNote;
+        private Action pendingOnFinished;
         private Coroutine replayRoutine;
         private bool isPaused;
         private bool isFinished;
@@ -87,10 +89,14 @@ namespace Game.Client.Battle
 
         // Replaces any replay in progress with the new result and plays it from the start.
         // resultNote, if given, is shown under the outcome when the replay ends.
-        public void StartReplay(BattleResult result, string resultNote = null)
+        // onFinished runs exactly once: when the replay first reaches its end, or earlier if the
+        // replay is closed or replaced first, so skipping a replay cannot skip its consequences.
+        public void StartReplay(BattleResult result, string resultNote = null, Action onFinished = null)
         {
+            FireFinished();
             currentResult = result;
             currentResultNote = resultNote;
+            pendingOnFinished = onFinished;
             replayPanel.SetActive(true);
             SetWorldHpVisible(true);
             Restart();
@@ -139,6 +145,7 @@ namespace Game.Client.Battle
 
         private void Close()
         {
+            FireFinished();
             StopReplay();
             characterA.StopToIdle();
             characterB.StopToIdle();
@@ -215,6 +222,15 @@ namespace Game.Client.Battle
             replayRoutine = null;
             UpdateControlLabels();
             SetMotionSpeed(1f);
+            FireFinished();
+        }
+
+        // Cleared before invoking so a callback that starts another replay cannot re-enter it.
+        private void FireFinished()
+        {
+            Action callback = pendingOnFinished;
+            pendingOnFinished = null;
+            callback?.Invoke();
         }
 
         private void SetMotionSpeed(float motionSpeed)

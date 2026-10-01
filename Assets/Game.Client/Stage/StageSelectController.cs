@@ -1,12 +1,15 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Game.Client.Battle;
 using Game.Client.Progress;
+using Game.Client.Pvp;
 using Game.Client.Stroke;
 using Game.Client.Technique;
 using Game.Sim.Ai;
 using Game.Sim.Battle;
 using Game.Sim.Progress;
+using Game.Sim.Pvp;
 using Game.Sim.Technique;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,6 +19,8 @@ namespace Game.Client.Stage
     // PvE stage list: one button per StageCatalog entry, locked ones greyed out. Picking a stage
     // pits one of the player's complete technique slots (asking which when there are several)
     // against that stage's seeded AI, replays the fight, and records the clear on a win.
+    // The PvP button next to the stage list runs the same slot pick against an opponent from
+    // IPvpBackend and reports the outcome once the replay ends.
     // Game.sim decides everything; this only wires UI and files.
     public class StageSelectController : MonoBehaviour
     {
@@ -28,6 +33,9 @@ namespace Game.Client.Stage
         // Inactive template cloned once per stage; must have a Text child for the label.
         [SerializeField] private Button stageButtonTemplate;
         [SerializeField] private Text pvpStatusText;
+        [SerializeField] private Button pvpButton;
+        // Outside the stage panel so the record stays on screen while drawing and replaying.
+        [SerializeField] private Text pvpRecordHudText;
         [SerializeField] private Text messageText;
         [SerializeField] private StrokeInputController strokeInput;
         [SerializeField] private BattleReplayController replayController;
@@ -40,11 +48,14 @@ namespace Game.Client.Stage
         private readonly List<Button> stageButtons = new List<Button>();
         private ProgressData progress;
         private Color unlockedLabelColor;
-        private int pendingStageIndex;
+        private Action<int> pendingSlotAction;
+        // Swap point for a real server: nothing else here knows which backend is in use.
+        private IPvpBackend pvpBackend;
 
         private void Awake()
         {
             progress = ProgressStore.Load();
+            pvpBackend = new LocalFakePvpBackend();
             stageButtonTemplate.gameObject.SetActive(false);
             unlockedLabelColor = stageButtonTemplate.GetComponentInChildren<Text>(true).color;
 
@@ -66,6 +77,7 @@ namespace Game.Client.Stage
 
             messageText.text = string.Empty;
             RefreshStageButtons();
+            RefreshPvpRecord();
             SetPanelOpen(false);
         }
 
@@ -74,6 +86,7 @@ namespace Game.Client.Stage
             openButton.onClick.AddListener(OpenPanel);
             closeButton.onClick.AddListener(ClosePanel);
             slotPickCancelButton.onClick.AddListener(CloseSlotPick);
+            pvpButton.onClick.AddListener(PlayPvp);
         }
 
         private void OnDisable()
@@ -81,6 +94,7 @@ namespace Game.Client.Stage
             openButton.onClick.RemoveListener(OpenPanel);
             closeButton.onClick.RemoveListener(ClosePanel);
             slotPickCancelButton.onClick.RemoveListener(CloseSlotPick);
+            pvpButton.onClick.RemoveListener(PlayPvp);
         }
 
         private void OpenPanel() => SetPanelOpen(true);
@@ -112,12 +126,35 @@ namespace Game.Client.Stage
                 label.color = unlocked ? unlockedLabelColor : LockedLabelColor;
             }
 
-            pvpStatusText.text = ProgressRules.IsPvpUnlocked(progress)
-                ? "PvP: 해제됨"
-                : $"PvP: 잠김 (스테이지 {StageCatalog.PvpUnlockStageIndex} 클리어 시 해제)";
+            bool pvpUnlocked = ProgressRules.IsPvpUnlocked(progress);
+            pvpButton.interactable = pvpUnlocked;
+            Text pvpLabel = pvpButton.GetComponentInChildren<Text>(true);
+            pvpLabel.text = pvpUnlocked
+                ? "PvP 대전"
+                : $"PvP 잠김\n<size=24>스테이지 {StageCatalog.PvpUnlockStageIndex} 클리어 시 해제</size>";
+            pvpLabel.color = pvpUnlocked ? unlockedLabelColor : LockedLabelColor;
         }
 
-        private void PlayStage(int stageIndex)
+        private void RefreshPvpRecord()
+        {
+            PvpRecord record = pvpBackend.GetRecord();
+            string text = $"PvP 전적: {record.Wins}승 {record.Losses}패 {record.Draws}무";
+            pvpStatusText.text = text;
+            pvpRecordHudText.text = text;
+        }
+
+        private void PlayStage(int stageIndex) => PickSlotThen(slot => PlayStageWithSlot(stageIndex, slot));
+
+        private void PlayPvp()
+        {
+            // The button is disabled while locked; this guards against a stale click.
+            if (!ProgressRules.IsPvpUnlocked(progress))
+                return;
+            PickSlotThen(PlayPvpWithSlot);
+        }
+
+        // Runs onPicked with the only complete slot, or asks which one when there are several.
+        private void PickSlotThen(Action<int> onPicked)
         {
             var completeSlots = new List<int>();
             for (int slot = 1; slot <= TechniqueSlotStore.SlotCount; slot++)
@@ -134,11 +171,11 @@ namespace Game.Client.Stage
 
             if (completeSlots.Count == 1)
             {
-                PlayStageWithSlot(stageIndex, completeSlots[0]);
+                onPicked(completeSlots[0]);
                 return;
             }
 
-            pendingStageIndex = stageIndex;
+            pendingSlotAction = onPicked;
             for (int i = 0; i < slotPickButtons.Length; i++)
             {
                 int slot = i + 1;
@@ -152,27 +189,38 @@ namespace Game.Client.Stage
         private void OnSlotPicked(int slot)
         {
             slotPickPanel.SetActive(false);
-            PlayStageWithSlot(pendingStageIndex, slot);
+            Action<int> action = pendingSlotAction;
+            pendingSlotAction = null;
+            action?.Invoke(slot);
         }
 
-        private void CloseSlotPick() => slotPickPanel.SetActive(false);
+        private void CloseSlotPick()
+        {
+            pendingSlotAction = null;
+            slotPickPanel.SetActive(false);
+        }
+
+        // Re-checked on load: the file may have changed since the status scan.
+        // BattleSimulator requires a full sequence; report it here instead of letting it throw.
+        private bool TryLoadPlayerSteps(int slot, out List<TechniqueStep> playerSteps)
+        {
+            if (TechniqueSlotStore.TryLoad(slot, out playerSteps) && playerSteps.Count == BattleSimulator.TurnsPerBattle)
+                return true;
+
+            messageText.text = $"슬롯 {slot} 무공을 불러올 수 없습니다.";
+            return false;
+        }
 
         private void PlayStageWithSlot(int stageIndex, int slot)
         {
-            // Re-checked on load: the file may have changed since the status scan.
-            // BattleSimulator requires a full sequence; report it here instead of letting it throw.
-            if (!TechniqueSlotStore.TryLoad(slot, out List<TechniqueStep> playerSteps)
-                || playerSteps.Count != BattleSimulator.TurnsPerBattle)
-            {
-                messageText.text = $"슬롯 {slot} 무공을 불러올 수 없습니다.";
+            if (!TryLoadPlayerSteps(slot, out List<TechniqueStep> playerSteps))
                 return;
-            }
 
             Debug.Log($"[Stage] 스테이지 {stageIndex}: 슬롯 {slot} 무공으로 전투");
             StageDefinition stage = StageCatalog.Get(stageIndex);
             List<TechniqueStep> aiSteps = AiTechniqueGenerator.Generate(stage.Difficulty, stage.Seed);
             BattleResult result = BattleSimulator.Simulate(playerSteps, aiSteps);
-            LogResult(stage, result);
+            LogResult($"[Stage] 스테이지 {stage.StageIndex} ({stage.Difficulty})", result);
 
             string note = null;
             if (result.Outcome == BattleOutcome.WinA)
@@ -181,6 +229,27 @@ namespace Game.Client.Stage
             messageText.text = note ?? string.Empty;
             SetPanelOpen(false);
             replayController.StartReplay(result, note);
+        }
+
+        // Unlike stage clears, the PvP result is reported when the replay ends (or is closed early;
+        // see BattleReplayController.StartReplay), the point a real backend would learn of it.
+        private void PlayPvpWithSlot(int slot)
+        {
+            if (!TryLoadPlayerSteps(slot, out List<TechniqueStep> playerSteps))
+                return;
+
+            Debug.Log($"[Pvp] 슬롯 {slot} 무공으로 PvP 전투");
+            IReadOnlyList<TechniqueStep> opponentSteps = pvpBackend.FetchRandomOpponent();
+            BattleResult result = BattleSimulator.Simulate(playerSteps, opponentSteps);
+            LogResult("[Pvp] PvP", result);
+
+            messageText.text = string.Empty;
+            SetPanelOpen(false);
+            replayController.StartReplay(result, "PvP 대전", () =>
+            {
+                pvpBackend.ReportResult(result.Outcome);
+                RefreshPvpRecord();
+            });
         }
 
         // Saved right away rather than after the replay, so quitting mid-replay keeps the clear.
@@ -206,10 +275,10 @@ namespace Game.Client.Stage
             return sb.ToString();
         }
 
-        private static void LogResult(StageDefinition stage, BattleResult result)
+        private static void LogResult(string title, BattleResult result)
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"[Stage] 스테이지 {stage.StageIndex} ({stage.Difficulty}) 대전 결과");
+            sb.AppendLine($"{title} 대전 결과");
             foreach (TurnEvent e in result.Events)
                 sb.AppendLine($"턴 {e.TurnIndex + 1}: 플레이어({e.TypeA}) vs AI({e.TypeB}) - 판정:{e.Reason} - 플레이어 데미지 {e.DamageToA} AI 데미지 {e.DamageToB} - HP 플레이어:{e.HpAAfter} AI:{e.HpBAfter}");
             sb.AppendLine($"최종 결과: {result.Outcome} - 최종 HP 플레이어:{result.FinalHpA} AI:{result.FinalHpB}");
