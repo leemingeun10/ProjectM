@@ -10,10 +10,26 @@ namespace Game.Client.Stroke
 {
     // Detects a mouse/touch drag via the new Input System's Pointer device, draws it live
     // on a UI canvas, and on release feeds the resampled points into Game.sim's StrokeAnalyzer.
+    //
+    // Strokes may only start inside drawFrame, a FrameWidthCm x FrameHeightCm rectangle of physical screen
+    // distance (via Screen.dpi). Game.sim receives centimetres from the frame centre, so a stroke
+    // measures the same on every device regardless of resolution or canvas scaling.
+    // The finished stroke stays on screen until the next stroke starts or ClearDisplayedStroke().
     public class StrokeInputController : MonoBehaviour
     {
+        public const float FrameWidthCm = 4.5f;
+        public const float FrameHeightCm = 4.5f;
+        private const float CmPerInch = 2.54f;
+        // Below this Screen.dpi is treated as unknown (0 in some editors/emulators, or nonsense).
+        private const float MinPlausibleDpi = 72f;
+        // Typical Android mdpi baseline.
+        private const float FallbackDpi = 160f;
+        private const float ReferenceCircleRadiusCm = 1f;
+
         [SerializeField] private RectTransform canvasRect;
         [SerializeField] private UILineRenderer lineRenderer;
+        // Centred rectangle the stroke must start in; resized at runtime to FrameWidthCm x FrameHeightCm.
+        [SerializeField] private RectTransform drawFrame;
         [SerializeField] private int resampleCount = 24;
 
         // Raised after a completed drag has been analyzed, with the same fixed-point points
@@ -24,9 +40,23 @@ namespace Game.Client.Stroke
         private readonly List<RaycastResult> uiHits = new List<RaycastResult>();
         private PointerEventData pointerEventData;
         private bool isDragging;
+        private Canvas canvas;
+        private float dpi;
+        private float frameScaleFactor = -1f;
+
+        private void Awake()
+        {
+            canvas = canvasRect.GetComponentInParent<Canvas>();
+            dpi = ResolveDpi();
+            LogReferenceCircleArea();
+        }
 
         private void Update()
         {
+            // The canvas scale changes with resolution/orientation; keep the frame at its physical size.
+            if (!Mathf.Approximately(canvas.scaleFactor, frameScaleFactor))
+                ResizeFrame();
+
             Pointer pointer = Pointer.current;
             if (pointer == null)
                 return;
@@ -35,8 +65,9 @@ namespace Game.Client.Stroke
             {
                 // A press that starts on a button/toggle belongs to the UI, not to a stroke;
                 // otherwise a slight finger drift while tapping gets recorded as a turn.
+                // Presses outside the frame are ignored entirely; once started, a drag may leave it.
                 Vector2 pressPos = pointer.position.ReadValue();
-                if (!IsOverInteractableUi(pressPos))
+                if (IsInsideFrame(pressPos) && !IsOverInteractableUi(pressPos))
                     BeginStroke(pressPos);
             }
             else if (isDragging && pointer.press.wasReleasedThisFrame)
@@ -49,6 +80,41 @@ namespace Game.Client.Stroke
                 AppendPoint(pointer.position.ReadValue());
             }
         }
+
+        // Removes the finished stroke left on screen. A drag in progress is left alone.
+        public void ClearDisplayedStroke()
+        {
+            if (isDragging)
+                return;
+            localPoints.Clear();
+            lineRenderer.SetPoints(localPoints);
+        }
+
+        private static float ResolveDpi()
+        {
+            float reported = Screen.dpi;
+            if (reported >= MinPlausibleDpi)
+                return reported;
+
+            Debug.LogWarning($"[Stroke] Screen.dpi({reported})가 비정상적으로 작아 기본값 {FallbackDpi}dpi로 그리기 틀 크기를 계산합니다.");
+            return FallbackDpi;
+        }
+
+        private void ResizeFrame()
+        {
+            frameScaleFactor = canvas.scaleFactor;
+            float pixelsPerCm = dpi / CmPerInch;
+            // Canvas units = screen pixels / scaleFactor (Screen Space - Overlay).
+            float unitsPerCm = pixelsPerCm / frameScaleFactor;
+            drawFrame.anchorMin = drawFrame.anchorMax = new Vector2(0.5f, 0.5f);
+            drawFrame.pivot = new Vector2(0.5f, 0.5f);
+            drawFrame.anchoredPosition = Vector2.zero;
+            drawFrame.sizeDelta = new Vector2(FrameWidthCm * unitsPerCm, FrameHeightCm * unitsPerCm);
+            Debug.Log($"[Stroke] 그리기 틀: {FrameWidthCm}x{FrameHeightCm}cm = {FrameWidthCm * pixelsPerCm:F0}x{FrameHeightCm * pixelsPerCm:F0}px ({dpi}dpi)");
+        }
+
+        private bool IsInsideFrame(Vector2 screenPos)
+            => RectTransformUtility.RectangleContainsScreenPoint(drawFrame, screenPos, null);
 
         // Only Selectables count: a plain full-screen Image (or the stroke line itself) may be a
         // raycast target, so EventSystem.IsPointerOverGameObject() alone would block every stroke.
@@ -91,38 +157,68 @@ namespace Game.Client.Stroke
             lineRenderer.SetPoints(localPoints);
         }
 
+        // The drawn line is left on screen as the pending stroke's preview.
         private void EndStroke()
         {
             isDragging = false;
 
-            if (localPoints.Count >= 2)
+            if (localPoints.Count < 2)
             {
-                List<Vector2> resampled = StrokeResampler.Resample(localPoints, resampleCount);
-                List<StrokePoint> simPoints = ToSimPoints(resampled);
-                StrokeResult result = StrokeAnalyzer.Analyze(simPoints);
-                LogResult(result);
-                LogRawRange(simPoints); // TEMP: coordinate range check, remove after normalization is decided
-                StrokeCompleted?.Invoke(result, simPoints);
+                ClearDisplayedStroke();
+                return;
             }
 
-            localPoints.Clear();
-            lineRenderer.SetPoints(localPoints);
+            List<Vector2> resampled = StrokeResampler.Resample(ToFrameCm(localPoints), resampleCount);
+            List<StrokePoint> simPoints = ToSimPoints(resampled);
+            StrokeResult result = StrokeAnalyzer.Analyze(simPoints);
+            LogResult(result);
+            LogRawRange(simPoints); // TEMP: coordinate range check, remove after normalization is decided
+            StrokeCompleted?.Invoke(result, simPoints);
         }
 
-        private static List<StrokePoint> ToSimPoints(List<Vector2> screenSpacePoints)
+        // canvasRect local units -> centimetres, origin at the frame centre (y up).
+        private List<Vector2> ToFrameCm(List<Vector2> canvasPoints)
         {
-            // Boundary conversion: Game.Client's float coordinates become Game.sim's fixed-point.
-            var simPoints = new List<StrokePoint>(screenSpacePoints.Count);
-            foreach (Vector2 p in screenSpacePoints)
+            Vector2 center = canvasRect.InverseTransformPoint(drawFrame.TransformPoint(drawFrame.rect.center));
+            float unitsPerCm = drawFrame.rect.width / FrameWidthCm;
+
+            var cmPoints = new List<Vector2>(canvasPoints.Count);
+            foreach (Vector2 p in canvasPoints)
+                cmPoints.Add((p - center) / unitsPerCm);
+            return cmPoints;
+        }
+
+        private static List<StrokePoint> ToSimPoints(List<Vector2> cmPoints)
+        {
+            // Boundary conversion: Game.Client's float centimetres become Game.sim's fixed-point.
+            var simPoints = new List<StrokePoint>(cmPoints.Count);
+            foreach (Vector2 p in cmPoints)
             {
-                long rawX = (long)(p.x * Fixed.Scale);
-                long rawY = (long)(p.y * Fixed.Scale);
+                long rawX = (long)Math.Round(p.x * Fixed.Scale);
+                long rawY = (long)Math.Round(p.y * Fixed.Scale);
                 simPoints.Add(new StrokePoint(rawX, rawY));
             }
             return simPoints;
         }
 
-        // TEMP: prints the raw fixed-point bounding box of a stroke (canvasRect local units * Fixed.Scale).
+        // Calibration aid for rebalancing: the Area a perfect radius-1cm circle gets after going
+        // through the same resample -> fixed-point -> analyzer path as a drawn stroke.
+        private void LogReferenceCircleArea()
+        {
+            const int segments = 256;
+            var circle = new List<Vector2>(segments + 1);
+            for (int i = 0; i <= segments; i++)
+            {
+                float angle = 2f * Mathf.PI * i / segments;
+                circle.Add(new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * ReferenceCircleRadiusCm);
+            }
+
+            StrokeResult result = StrokeAnalyzer.Analyze(ToSimPoints(StrokeResampler.Resample(circle, resampleCount)));
+            string value = result.Type == StrokeType.Thrust ? $"Area: {result.Area}" : $"Thrust가 아닌 {result.Type}으로 판정됨";
+            Debug.Log($"[StrokeScale] 반지름 {ReferenceCircleRadiusCm}cm 원(이론값 {Mathf.PI * ReferenceCircleRadiusCm * ReferenceCircleRadiusCm:F3}cm²) - {value}");
+        }
+
+        // TEMP: prints the raw fixed-point bounding box of a stroke (cm from frame centre * Fixed.Scale).
         private static void LogRawRange(List<StrokePoint> points)
         {
             long minX = long.MaxValue, maxX = long.MinValue, minY = long.MaxValue, maxY = long.MinValue;
@@ -133,7 +229,7 @@ namespace Game.Client.Stroke
                 minY = Math.Min(minY, p.Y.Raw);
                 maxY = Math.Max(maxY, p.Y.Raw);
             }
-            Debug.Log($"[StrokeRange] raw X: {minX} ~ {maxX}, raw Y: {minY} ~ {maxY} (local X: {minX / (float)Fixed.Scale:F1} ~ {maxX / (float)Fixed.Scale:F1}, local Y: {minY / (float)Fixed.Scale:F1} ~ {maxY / (float)Fixed.Scale:F1})");
+            Debug.Log($"[StrokeRange] raw X: {minX} ~ {maxX}, raw Y: {minY} ~ {maxY} (cm X: {minX / (float)Fixed.Scale:F2} ~ {maxX / (float)Fixed.Scale:F2}, cm Y: {minY / (float)Fixed.Scale:F2} ~ {maxY / (float)Fixed.Scale:F2})");
         }
 
         private static void LogResult(StrokeResult result)

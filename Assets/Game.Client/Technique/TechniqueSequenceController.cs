@@ -8,43 +8,71 @@ using UnityEngine.UI;
 
 namespace Game.Client.Technique
 {
-    // Bridges the counter UI to StrokeInputController's completed strokes,
-    // recording each one into Game.sim's TechniqueBuilder turn by turn.
+    // Bridges the counter UI to StrokeInputController's completed strokes and Game.sim's
+    // TechniqueBuilder. A finished stroke is only a pending preview; it becomes a turn when the
+    // player presses the save-turn button, using the counter toggle state at that moment.
+    // Saved turns are listed with a delete button each.
     public class TechniqueSequenceController : MonoBehaviour
     {
         [SerializeField] private StrokeInputController strokeInput;
         [SerializeField] private Toggle counterToggle;
         [SerializeField] private Text statusText;
+        // Discards the pending stroke only; saved turns are kept.
         [SerializeField] private Button resetButton;
+        [SerializeField] private Button saveTurnButton;
+        [SerializeField] private Text pendingText;
+        [SerializeField] private RectTransform turnListContainer;
+        // Inactive template cloned once per possible turn; needs a "Label" Text child and a Button child.
+        [SerializeField] private RectTransform turnRowTemplate;
 
         private readonly TechniqueBuilder builder = new TechniqueBuilder();
+        private readonly List<Text> turnRowLabels = new List<Text>();
+        private readonly List<GameObject> turnRows = new List<GameObject>();
 
-        private bool counterResetPending;
+        private bool hasPending;
+        private StrokeResult pendingStroke;
+        private IReadOnlyList<StrokePoint> pendingPoints;
 
         public TechniqueBuilder Builder => builder;
 
-        // Live counter toggle state. Stays true for the rest of the frame in which a stroke
-        // completes, so other StrokeCompleted listeners see it regardless of subscription order.
+        // Live counter toggle state, read by the drawing preview when a stroke completes.
         public bool IsCounterOn => counterToggle.isOn;
+
+        private void Awake()
+        {
+            turnRowTemplate.gameObject.SetActive(false);
+            for (int i = 0; i < TechniqueBuilder.MaxTurns; i++)
+            {
+                RectTransform row = Instantiate(turnRowTemplate, turnListContainer);
+                row.name = $"TurnRow{i + 1}";
+                int turnIndex = i;
+                row.GetComponentInChildren<Button>(true).onClick.AddListener(() => RemoveTurn(turnIndex));
+                turnRowLabels.Add(row.Find("Label").GetComponent<Text>());
+                turnRows.Add(row.gameObject);
+            }
+        }
 
         private void OnEnable()
         {
             strokeInput.StrokeCompleted += OnStrokeCompleted;
-            resetButton.onClick.AddListener(ResetSequence);
+            resetButton.onClick.AddListener(ClearPending);
+            saveTurnButton.onClick.AddListener(SavePendingTurn);
             UpdateUi();
         }
 
         private void OnDisable()
         {
             strokeInput.StrokeCompleted -= OnStrokeCompleted;
-            resetButton.onClick.RemoveListener(ResetSequence);
+            resetButton.onClick.RemoveListener(ClearPending);
+            saveTurnButton.onClick.RemoveListener(SavePendingTurn);
         }
 
+        // Clears the whole sequence (saved turns and pending stroke), e.g. when switching slots.
         // Named ResetSequence rather than Reset: MonoBehaviour.Reset is an editor message.
         public void ResetSequence()
         {
             builder.Reset();
-            counterResetPending = false;
+            DiscardPending();
             counterToggle.isOn = false;
             UpdateUi();
             Debug.Log("[Technique] 시퀀스 초기화됨");
@@ -55,7 +83,7 @@ namespace Game.Client.Technique
         public void LoadSteps(IReadOnlyList<TechniqueStep> steps)
         {
             builder.Reset();
-            counterResetPending = false;
+            DiscardPending();
             counterToggle.isOn = false;
             foreach (TechniqueStep step in steps)
             {
@@ -68,47 +96,89 @@ namespace Game.Client.Technique
             UpdateUi();
         }
 
+        // A new stroke replaces any pending one; nothing is added to the builder yet.
         private void OnStrokeCompleted(StrokeResult stroke, IReadOnlyList<StrokePoint> rawPoints)
         {
-            bool isCounter = counterToggle.isOn;
+            hasPending = true;
+            pendingStroke = stroke;
+            pendingPoints = rawPoints;
+            UpdateUi();
+        }
 
-            TechniqueAddResult addResult = builder.TryAddStep(isCounter, stroke, rawPoints);
+        private void ClearPending()
+        {
+            if (!hasPending)
+                return;
+            DiscardPending();
+            UpdateUi();
+            Debug.Log("[Technique] 저장 안 한 스트로크를 지웠습니다.");
+        }
+
+        private void DiscardPending()
+        {
+            hasPending = false;
+            pendingPoints = null;
+            strokeInput.ClearDisplayedStroke();
+        }
+
+        private void SavePendingTurn()
+        {
+            if (!hasPending)
+                return;
+
+            bool isCounter = counterToggle.isOn;
+            TechniqueAddResult addResult = builder.TryAddStep(isCounter, pendingStroke, pendingPoints);
             switch (addResult)
             {
                 case TechniqueAddResult.Success:
                     LogStepSummary(builder.Steps[builder.TurnCount - 1]);
                     if (builder.IsFull)
                         LogSequenceComplete();
+                    DiscardPending();
+                    // Counter mode applies to a single turn; the player re-enables it per turn.
+                    counterToggle.isOn = false;
                     break;
                 case TechniqueAddResult.SequenceFull:
-                    Debug.LogWarning("[Technique] 시퀀스가 이미 10턴을 채웠습니다. 이번 스트로크는 무시됩니다.");
+                    Debug.LogWarning("[Technique] 시퀀스가 이미 10턴을 채웠습니다. 턴을 삭제한 뒤 저장하세요.");
                     break;
                 case TechniqueAddResult.CounterLimitReached:
-                    Debug.LogWarning("[Technique] 카운터 횟수를 모두 사용했습니다. 이번 스트로크는 무시됩니다.");
+                    Debug.LogWarning("[Technique] 카운터 횟수를 모두 사용했습니다. 카운터를 끄거나 카운터 턴을 삭제하세요.");
                     break;
             }
-
-            // Counter mode applies to a single stroke; the player re-enables it per turn.
-            // Cleared in LateUpdate so every StrokeCompleted listener this frame reads IsCounterOn intact.
-            counterResetPending = true;
             UpdateUi();
         }
 
-        private void LateUpdate()
+        private void RemoveTurn(int turnIndex)
         {
-            if (!counterResetPending)
+            if (!builder.RemoveAt(turnIndex))
                 return;
-
-            counterResetPending = false;
-            counterToggle.isOn = false;
+            Debug.Log($"[Technique] 턴 {turnIndex + 1} 삭제");
             UpdateUi();
         }
 
         private void UpdateUi()
         {
             statusText.text = $"턴 {builder.TurnCount} / {TechniqueBuilder.MaxTurns}\n카운터 남음: {builder.RemainingCounters}";
-            counterToggle.interactable = builder.RemainingCounters > 0 && !builder.IsFull;
+            // Leave an already-on toggle switchable off even when no counters remain.
+            counterToggle.interactable = counterToggle.isOn || (builder.RemainingCounters > 0 && !builder.IsFull);
+            resetButton.interactable = hasPending;
+            saveTurnButton.interactable = hasPending && !builder.IsFull;
+
+            pendingText.text = !hasPending ? "틀 안에 선을 그리세요"
+                : builder.IsFull ? $"미리보기: {FormatStroke(pendingStroke)} (10턴 가득 참)"
+                : $"미리보기: {FormatStroke(pendingStroke)} (저장 안 됨)";
+
+            for (int i = 0; i < turnRows.Count; i++)
+            {
+                bool used = i < builder.TurnCount;
+                turnRows[i].SetActive(used);
+                if (used)
+                    turnRowLabels[i].text = FormatTurn(builder.Steps[i]);
+            }
         }
+
+        private static string FormatTurn(TechniqueStep step)
+            => $"턴 {step.TurnIndex + 1}  {(step.IsCounter ? "Counter · " : "")}{FormatStroke(step.Stroke)}";
 
         private static void LogStepSummary(TechniqueStep step)
         {
@@ -127,7 +197,7 @@ namespace Game.Client.Technique
 
         private static string FormatStroke(StrokeResult stroke)
             => stroke.Type == StrokeType.Slash
-                ? $"Slash Length={stroke.Length}"
-                : $"Thrust Area={stroke.Area}";
+                ? $"Slash {stroke.Length}cm"
+                : $"Thrust {stroke.Area}cm²";
     }
 }
