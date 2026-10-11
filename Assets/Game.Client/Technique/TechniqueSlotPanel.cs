@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Client.Ui;
 using Game.Sim.Technique;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,6 +8,7 @@ namespace Game.Client.Technique
 {
     // Drawing-screen slot bar: picks which of the 5 technique slots is being edited, loads its
     // saved steps into the builder, saves the builder back to it, and deletes slots.
+    // Lives on the 무공 제작 screen, the only place techniques are drawn.
     public class TechniqueSlotPanel : MonoBehaviour
     {
         [SerializeField] private TechniqueSequenceController sequenceController;
@@ -15,14 +17,15 @@ namespace Game.Client.Technique
         // One entry per slot (index 0 = slot 1); each select button needs a Text child.
         [SerializeField] private Button[] slotButtons = new Button[TechniqueSlotStore.SlotCount];
         [SerializeField] private Button[] deleteButtons = new Button[TechniqueSlotStore.SlotCount];
-        [SerializeField] private Color selectedSlotColor = new Color(1f, 0.85f, 0.4f);
+        [SerializeField] private Color selectedSlotColor = InkTheme.Vermilion;
 
         private Color normalSlotColor;
         private int selectedSlot = 1;
 
         private void Awake()
         {
-            normalSlotColor = slotButtons[0].image.color;
+            // Slot buttons are skinned through their ColorBlock (see InkStyle), not the image colour.
+            normalSlotColor = slotButtons[0].colors.normalColor;
             for (int i = 0; i < slotButtons.Length; i++)
             {
                 int slot = i + 1;
@@ -93,7 +96,7 @@ namespace Game.Client.Technique
                 int slot = i + 1;
                 TechniqueSlotStatus status = TechniqueSlotStore.GetStatus(slot);
                 slotButtons[i].GetComponentInChildren<Text>(true).text = $"슬롯 {slot}\n<size=22>{status.Describe()}</size>";
-                slotButtons[i].image.color = slot == selectedSlot ? selectedSlotColor : normalSlotColor;
+                InkStyle.SetFill(slotButtons[i], slot == selectedSlot ? selectedSlotColor : normalSlotColor);
                 deleteButtons[i].interactable = status.State != TechniqueSlotState.Empty;
             }
             saveButtonLabel.text = $"슬롯 {selectedSlot} 저장";

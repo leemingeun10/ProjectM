@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Game.Client.Battle;
+using Game.Client.Flow;
 using Game.Client.Progress;
 using Game.Client.Pvp;
-using Game.Client.Stroke;
 using Game.Client.Technique;
+using Game.Client.Ui;
 using Game.Sim.Ai;
 using Game.Sim.Battle;
 using Game.Sim.Progress;
@@ -16,38 +17,42 @@ using UnityEngine.UI;
 
 namespace Game.Client.Stage
 {
-    // PvE stage list: one button per StageCatalog entry, locked ones greyed out. Picking a stage
-    // pits one of the player's complete technique slots (asking which when there are several)
-    // against that stage's seeded AI, replays the fight, and records the clear on a win.
-    // The PvP button next to the stage list runs the same slot pick against an opponent from
-    // IPvpBackend and reports the outcome once the replay ends.
+    // Battle entry for both the 수련 (PvE stage list) and 비무 (PvP lobby) screens.
+    // Stage list: one button per StageCatalog entry, locked ones disabled. Picking a stage pits
+    // one of the player's complete technique slots (asking which when there are several) against
+    // that stage's seeded AI, moves to the battle screen to replay it, and records the clear on a win.
+    // PvP: the lobby's start button runs the same slot pick against an opponent from IPvpBackend
+    // and reports the outcome once the replay ends.
+    // Techniques are never drawn here: with no complete slot the popup points to 무공 제작.
     // Game.sim decides everything; this only wires UI and files.
     public class StageSelectController : MonoBehaviour
     {
-        private static readonly Color LockedLabelColor = new Color(0.2f, 0.2f, 0.2f, 0.35f);
+        // Darker than InkTheme.Gold so it stays readable on hanji cards.
+        private const string ClearedColorTag = "#7A5A1E";
 
-        [SerializeField] private GameObject stagePanel;
-        [SerializeField] private Button openButton;
-        [SerializeField] private Button closeButton;
+        [SerializeField] private GameFlowController flow;
         [SerializeField] private RectTransform stageButtonContainer;
         // Inactive template cloned once per stage; must have a Text child for the label.
         [SerializeField] private Button stageButtonTemplate;
+        // On the 비무 screen: record card and the start button.
         [SerializeField] private Text pvpStatusText;
         [SerializeField] private Button pvpButton;
-        // Outside the stage panel so the record stays on screen while drawing and replaying.
+        // Global HUD shown on every screen but the title, so the record is always in view.
         [SerializeField] private Text pvpRecordHudText;
         [SerializeField] private Text messageText;
-        [SerializeField] private StrokeInputController strokeInput;
         [SerializeField] private BattleReplayController replayController;
-        // Shown over the stage list when more than one slot is complete.
+        // Popup shared by both screens: picks among complete slots, or explains why a battle
+        // cannot start (offering the way to 무공 제작).
         [SerializeField] private GameObject slotPickPanel;
+        [SerializeField] private Text slotPickTitle;
+        [SerializeField] private Text slotPickBody;
         // One entry per slot (index 0 = slot 1); each needs a Text child.
         [SerializeField] private Button[] slotPickButtons = new Button[TechniqueSlotStore.SlotCount];
         [SerializeField] private Button slotPickCancelButton;
+        [SerializeField] private Button slotPickWorkshopButton;
 
         private readonly List<Button> stageButtons = new List<Button>();
         private ProgressData progress;
-        private Color unlockedLabelColor;
         private Action<int> pendingSlotAction;
         // Swap point for a real server: nothing else here knows which backend is in use.
         private IPvpBackend pvpBackend;
@@ -57,7 +62,6 @@ namespace Game.Client.Stage
             progress = ProgressStore.Load();
             pvpBackend = new LocalFakePvpBackend();
             stageButtonTemplate.gameObject.SetActive(false);
-            unlockedLabelColor = stageButtonTemplate.GetComponentInChildren<Text>(true).color;
 
             foreach (StageDefinition stage in StageCatalog.Stages)
             {
@@ -76,37 +80,49 @@ namespace Game.Client.Stage
             }
 
             messageText.text = string.Empty;
+            slotPickPanel.SetActive(false);
             RefreshStageButtons();
             RefreshPvpRecord();
-            SetPanelOpen(false);
         }
 
         private void OnEnable()
         {
-            openButton.onClick.AddListener(OpenPanel);
-            closeButton.onClick.AddListener(ClosePanel);
             slotPickCancelButton.onClick.AddListener(CloseSlotPick);
+            slotPickWorkshopButton.onClick.AddListener(GoToWorkshop);
             pvpButton.onClick.AddListener(PlayPvp);
+            flow.ScreenEntered += OnScreenEntered;
+            flow.ScreenExited += OnScreenExited;
         }
 
         private void OnDisable()
         {
-            openButton.onClick.RemoveListener(OpenPanel);
-            closeButton.onClick.RemoveListener(ClosePanel);
             slotPickCancelButton.onClick.RemoveListener(CloseSlotPick);
+            slotPickWorkshopButton.onClick.RemoveListener(GoToWorkshop);
             pvpButton.onClick.RemoveListener(PlayPvp);
+            flow.ScreenEntered -= OnScreenEntered;
+            flow.ScreenExited -= OnScreenExited;
         }
 
-        private void OpenPanel() => SetPanelOpen(true);
-
-        private void ClosePanel() => SetPanelOpen(false);
-
-        // The panel covers the drawing area, so stroke input is paused while it is open.
-        private void SetPanelOpen(bool open)
+        private void OnScreenEntered(GameScreen screen)
         {
-            stagePanel.SetActive(open);
-            slotPickPanel.SetActive(false);
-            strokeInput.enabled = !open;
+            if (screen == GameScreen.Training)
+            {
+                messageText.text = string.Empty;
+                RefreshStageButtons();
+            }
+            else if (screen == GameScreen.Sparring)
+            {
+                RefreshPvpRecord();
+            }
+        }
+
+        // The popup belongs to whichever screen opened it.
+        private void OnScreenExited(GameScreen screen) => CloseSlotPick();
+
+        private void GoToWorkshop()
+        {
+            CloseSlotPick();
+            flow.GoTo(GameScreen.Workshop);
         }
 
         private void RefreshStageButtons()
@@ -117,30 +133,55 @@ namespace Game.Client.Stage
                 bool unlocked = ProgressRules.IsStageUnlocked(progress, stage.StageIndex);
                 bool cleared = stage.StageIndex <= progress.HighestClearedStage;
 
+                // Locked colours come from InkButtonLabel, which follows interactable.
                 Button button = stageButtons[i];
                 button.interactable = unlocked;
                 Text label = button.GetComponentInChildren<Text>(true);
-                label.text = cleared ? $"{stage.StageIndex}\n<size=24>클리어</size>"
+                label.text = cleared ? $"{stage.StageIndex}\n<size=24><color={ClearedColorTag}>클리어</color></size>"
                     : unlocked ? $"{stage.StageIndex}\n<size=24>{DescribeDifficulty(stage.Difficulty)}</size>"
                     : $"{stage.StageIndex}\n<size=24>잠김</size>";
-                label.color = unlocked ? unlockedLabelColor : LockedLabelColor;
             }
 
             bool pvpUnlocked = ProgressRules.IsPvpUnlocked(progress);
             pvpButton.interactable = pvpUnlocked;
-            Text pvpLabel = pvpButton.GetComponentInChildren<Text>(true);
-            pvpLabel.text = pvpUnlocked
-                ? "PvP 대전"
-                : $"PvP 잠김\n<size=24>스테이지 {StageCatalog.PvpUnlockStageIndex} 클리어 시 해제</size>";
-            pvpLabel.color = pvpUnlocked ? unlockedLabelColor : LockedLabelColor;
+            pvpButton.GetComponentInChildren<Text>(true).text = pvpUnlocked
+                ? "상대 찾기"
+                : $"비무 잠김\n<size=24>스테이지 {StageCatalog.PvpUnlockStageIndex} 클리어 시 해제</size>";
         }
 
         private void RefreshPvpRecord()
         {
             PvpRecord record = pvpBackend.GetRecord();
-            string text = $"PvP 전적: {record.Wins}승 {record.Losses}패 {record.Draws}무";
-            pvpStatusText.text = text;
-            pvpRecordHudText.text = text;
+            int score = RankingRules.CalculateScore(record);
+            RankingTier tier = RankingRules.GetTier(score);
+            string tierTag = ColorUtility.ToHtmlStringRGB(TierColor(tier));
+
+            pvpStatusText.text = $"{record.Wins}승  {record.Losses}패  {record.Draws}무\n"
+                + $"<size=40><color=#{tierTag}>{DescribeTier(tier)}</color>  {score}점</size>";
+            pvpRecordHudText.text = $"비무 {record.Wins}승 {record.Losses}패 {record.Draws}무\n"
+                + $"<color=#{tierTag}>{DescribeTier(tier)} · {score}점</color>";
+        }
+
+        private static string DescribeTier(RankingTier tier)
+        {
+            switch (tier)
+            {
+                case RankingTier.Silver: return "은패";
+                case RankingTier.Gold: return "금패";
+                case RankingTier.Platinum: return "백금패";
+                default: return "동패";
+            }
+        }
+
+        private static Color TierColor(RankingTier tier)
+        {
+            switch (tier)
+            {
+                case RankingTier.Silver: return new Color(0.75f, 0.75f, 0.78f);   // #BFBFC7
+                case RankingTier.Gold: return InkTheme.Gold;
+                case RankingTier.Platinum: return new Color(0.45f, 0.8f, 1f);     // #73CCFF
+                default: return new Color(0.72f, 0.45f, 0.2f);                    // #B87333 bronze
+            }
         }
 
         private void PlayStage(int stageIndex) => PickSlotThen(slot => PlayStageWithSlot(stageIndex, slot));
@@ -165,7 +206,7 @@ namespace Game.Client.Stage
 
             if (completeSlots.Count == 0)
             {
-                messageText.text = $"완성된 무공 슬롯이 없습니다.\n{BattleSimulator.TurnsPerBattle}턴을 채워 슬롯에 저장하세요.";
+                ShowNotice("완성된 무공이 없습니다", $"무공 제작에서 {BattleSimulator.TurnsPerBattle}턴을 모두 채워\n슬롯에 저장한 뒤 다시 오세요.");
                 return;
             }
 
@@ -182,7 +223,22 @@ namespace Game.Client.Stage
                 slotPickButtons[i].gameObject.SetActive(completeSlots.Contains(slot));
                 slotPickButtons[i].GetComponentInChildren<Text>(true).text = $"슬롯 {slot}";
             }
+            slotPickTitle.text = "출전할 무공";
+            slotPickBody.text = "완성된 무공 중 하나를 고르세요.";
+            slotPickWorkshopButton.gameObject.SetActive(false);
             messageText.text = string.Empty;
+            slotPickPanel.SetActive(true);
+        }
+
+        // Same popup without slot choices: a message plus the way to 무공 제작.
+        private void ShowNotice(string title, string body)
+        {
+            pendingSlotAction = null;
+            foreach (Button button in slotPickButtons)
+                button.gameObject.SetActive(false);
+            slotPickTitle.text = title;
+            slotPickBody.text = body;
+            slotPickWorkshopButton.gameObject.SetActive(true);
             slotPickPanel.SetActive(true);
         }
 
@@ -207,7 +263,7 @@ namespace Game.Client.Stage
             if (TechniqueSlotStore.TryLoad(slot, out playerSteps) && playerSteps.Count == BattleSimulator.TurnsPerBattle)
                 return true;
 
-            messageText.text = $"슬롯 {slot} 무공을 불러올 수 없습니다.";
+            ShowNotice("무공을 불러올 수 없습니다", $"슬롯 {slot}의 무공이 손상되었거나 미완성입니다.\n무공 제작에서 다시 저장하세요.");
             return false;
         }
 
@@ -227,8 +283,7 @@ namespace Game.Client.Stage
                 note = RecordClear(stageIndex);
 
             messageText.text = note ?? string.Empty;
-            SetPanelOpen(false);
-            replayController.StartReplay(result, note);
+            flow.GoTo(GameScreen.Battle, () => replayController.StartReplay(result, note));
         }
 
         // Unlike stage clears, the PvP result is reported when the replay ends (or is closed early;
@@ -244,12 +299,11 @@ namespace Game.Client.Stage
             LogResult("[Pvp] PvP", result);
 
             messageText.text = string.Empty;
-            SetPanelOpen(false);
-            replayController.StartReplay(result, "PvP 대전", () =>
+            flow.GoTo(GameScreen.Battle, () => replayController.StartReplay(result, "비무", () =>
             {
                 pvpBackend.ReportResult(result.Outcome);
                 RefreshPvpRecord();
-            });
+            }));
         }
 
         // Saved right away rather than after the replay, so quitting mid-replay keeps the clear.
@@ -271,7 +325,7 @@ namespace Game.Client.Stage
             else
                 sb.Append("\n모든 스테이지 클리어!");
             if (!pvpWasUnlocked && ProgressRules.IsPvpUnlocked(progress))
-                sb.Append("\nPvP 해제!");
+                sb.Append("\n비무 해제!");
             return sb.ToString();
         }
 

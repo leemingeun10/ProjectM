@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Game.Client.Flow;
 using Game.Sim.Battle;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,6 +12,8 @@ namespace Game.Client.Battle
     // is never modified, and all float/timing work stays on this side of the Game.sim boundary.
     // Each turn also starts characters A and B on the motion for their BattleStepType; the clip
     // speed follows the replay speed and freezes while paused.
+    // Lives on the battle screen: when the replay ends a result panel offers "다시 보기" and
+    // "홈으로", and leaving the battle screen by any route closes the replay.
     public class BattleReplayController : MonoBehaviour
     {
         private const float TurnInterval = 1.2f;
@@ -21,6 +24,7 @@ namespace Game.Client.Battle
         private const float ImpactFraction = 0.3f;
         // Fraction of a turn after which the camera eases back out of its turn focus.
         private const float FocusEndFraction = 0.65f;
+        private const int OutcomeFontSize = 130;
 
         [SerializeField] private GameObject replayPanel;
         [SerializeField] private Image hpFillA;
@@ -35,7 +39,13 @@ namespace Game.Client.Battle
         [SerializeField] private Button speedButton;
         [SerializeField] private Text speedLabel;
         [SerializeField] private Button restartButton;
+        // Leaves mid-replay; goes home like the result panel's home button.
         [SerializeField] private Button closeButton;
+        [SerializeField] private GameFlowController flow;
+        // Shown once the replay ends; holds resultText and the two follow-up choices.
+        [SerializeField] private GameObject resultPanel;
+        [SerializeField] private Button replayAgainButton;
+        [SerializeField] private Button resultHomeButton;
         [SerializeField] private CharacterMotionPlayer characterA;
         [SerializeField] private CharacterMotionPlayer characterB;
         [SerializeField] private BattleCameraRig cameraRig;
@@ -54,6 +64,7 @@ namespace Game.Client.Battle
         private void Awake()
         {
             replayPanel.SetActive(false);
+            resultPanel.SetActive(false);
             SetWorldHpVisible(false);
 
             // Same fail-once policy as StrokeAnimationPlayer: report unwired characters up front.
@@ -76,7 +87,10 @@ namespace Game.Client.Battle
             playPauseButton.onClick.AddListener(TogglePause);
             speedButton.onClick.AddListener(ToggleSpeed);
             restartButton.onClick.AddListener(Restart);
-            closeButton.onClick.AddListener(Close);
+            closeButton.onClick.AddListener(GoHome);
+            replayAgainButton.onClick.AddListener(Restart);
+            resultHomeButton.onClick.AddListener(GoHome);
+            flow.ScreenExited += OnScreenExited;
         }
 
         private void OnDisable()
@@ -84,7 +98,18 @@ namespace Game.Client.Battle
             playPauseButton.onClick.RemoveListener(TogglePause);
             speedButton.onClick.RemoveListener(ToggleSpeed);
             restartButton.onClick.RemoveListener(Restart);
-            closeButton.onClick.RemoveListener(Close);
+            closeButton.onClick.RemoveListener(GoHome);
+            replayAgainButton.onClick.RemoveListener(Restart);
+            resultHomeButton.onClick.RemoveListener(GoHome);
+            flow.ScreenExited -= OnScreenExited;
+        }
+
+        private void GoHome() => flow.GoTo(GameScreen.Home);
+
+        private void OnScreenExited(GameScreen screen)
+        {
+            if (screen == GameScreen.Battle)
+                Close();
         }
 
         // Replaces any replay in progress with the new result and plays it from the start.
@@ -116,7 +141,7 @@ namespace Game.Client.Battle
             SetHp(BattleConstants.StartingHP, BattleConstants.StartingHP);
             turnText.text = $"턴 0 / {BattleSimulator.TurnsPerBattle}";
             descriptionText.text = string.Empty;
-            resultText.gameObject.SetActive(false);
+            resultPanel.SetActive(false);
             UpdateControlLabels();
             replayRoutine = StartCoroutine(PlayTurns(currentResult));
         }
@@ -152,6 +177,7 @@ namespace Game.Client.Battle
             SetMotionSpeed(1f);
             cameraRig.SetFocused(false);
             replayPanel.SetActive(false);
+            resultPanel.SetActive(false);
             SetWorldHpVisible(false);
         }
 
@@ -214,10 +240,13 @@ namespace Game.Client.Battle
                 cameraRig.SetFocused(false);
             }
 
+            // The base font size is the note's; the outcome is enlarged inline so the note lines
+            // keep their own (smaller) line height.
+            string outcome = $"<size={OutcomeFontSize}>{DescribeOutcome(result.Outcome)}</size>";
             resultText.text = string.IsNullOrEmpty(currentResultNote)
-                ? DescribeOutcome(result.Outcome)
-                : $"{DescribeOutcome(result.Outcome)}\n<size=40>{currentResultNote}</size>";
-            resultText.gameObject.SetActive(true);
+                ? outcome
+                : $"{outcome}\n{currentResultNote}";
+            resultPanel.SetActive(true);
             isFinished = true;
             replayRoutine = null;
             UpdateControlLabels();
@@ -254,8 +283,8 @@ namespace Game.Client.Battle
         {
             hpFillA.fillAmount = hpA / BattleConstants.StartingHP;
             hpFillB.fillAmount = hpB / BattleConstants.StartingHP;
-            hpTextA.text = $"A: {Mathf.RoundToInt(hpA)}";
-            hpTextB.text = $"B: {Mathf.RoundToInt(hpB)}";
+            hpTextA.text = $"나  {Mathf.RoundToInt(hpA)}";
+            hpTextB.text = $"상대  {Mathf.RoundToInt(hpB)}";
             worldHpA.SetHp(hpA, BattleConstants.StartingHP);
             worldHpB.SetHp(hpB, BattleConstants.StartingHP);
         }
@@ -286,7 +315,7 @@ namespace Game.Client.Battle
         }
 
         private static string DescribeTurn(TurnEvent e)
-            => $"A: {DescribeStepType(e.TypeA)}  vs  B: {DescribeStepType(e.TypeB)}   →  {DescribeReason(e.Reason)}   →  A -{e.DamageToA}  B -{e.DamageToB}";
+            => $"나 {DescribeStepType(e.TypeA)}  vs  상대 {DescribeStepType(e.TypeB)}\n{DescribeReason(e.Reason)}  ·  나 -{e.DamageToA}  상대 -{e.DamageToB}";
 
         private static string DescribeStepType(BattleStepType type)
         {
@@ -314,8 +343,9 @@ namespace Game.Client.Battle
         {
             switch (outcome)
             {
-                case BattleOutcome.WinA: return "A 승리";
-                case BattleOutcome.WinB: return "B 승리";
+                // Player is always A.
+                case BattleOutcome.WinA: return "승리";
+                case BattleOutcome.WinB: return "패배";
                 default: return "무승부";
             }
         }
