@@ -1,0 +1,12 @@
+{
+    "asset": "983e8bad066768e4aa5b1f8751607ba3",
+    "fileName": "01a130ed-3180-7ae0-a46e-22a29ddaf895.fbx",
+    "prompt": "A swordsman holding a one-handed sword in the right hand raises the blade high above the head and cuts straight down in a powerful vertical slash while stepping half a step forward, then recovers to a ready fighting stance.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 314830781,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

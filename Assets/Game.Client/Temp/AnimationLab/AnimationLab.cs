@@ -201,13 +201,17 @@ namespace Game.Client.Temp.AnimationLab
                 entries.Add((c.clip != null ? c.label : $"{c.label}\n<size=22>미생성</size>", c.clip != null ? next++ : -1));
 
             const int columns = 3;
+            // Up to four rows at full size; beyond that rows tighten so the controls stay on screen.
+            int rows = (entries.Count + columns - 1) / columns;
+            float rowPitch = rows > 4 ? 96f : 112f;
+            float buttonHeight = rowPitch - 16f;
             for (int i = 0; i < entries.Count; i++)
             {
                 int previewIndex = entries[i].previewIndex;
                 Button b = MakeButton(rootRt, entries[i].label, InkButtonKind.Secondary, 30, () => PlayClip(previewIndex));
                 int row = i / columns;
                 int col = i % columns;
-                Place((RectTransform)b.transform, new Vector2(0.5f, 1f), new Vector2((col - 1) * 340f, -1190f - row * 112f), new Vector2(320f, 96f));
+                Place((RectTransform)b.transform, new Vector2(0.5f, 1f), new Vector2((col - 1) * 340f, -1190f - row * rowPitch), new Vector2(320f, buttonHeight));
                 b.interactable = previewIndex >= 0;
                 if (previewIndex >= 0)
                 {
@@ -216,7 +220,7 @@ namespace Game.Client.Temp.AnimationLab
                 }
             }
 
-            float controlsY = -1190f - ((entries.Count + columns - 1) / columns) * 112f - 30f;
+            float controlsY = -1190f - rows * rowPitch - 30f;
             pauseLabel = MakeControl(rootRt, 0, controlsY, () => preview.SetPaused(!preview.Paused));
             speedLabel = MakeControl(rootRt, 1, controlsY, () =>
             {

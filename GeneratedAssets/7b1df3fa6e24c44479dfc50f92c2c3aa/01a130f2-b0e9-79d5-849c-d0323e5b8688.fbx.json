@@ -1,0 +1,12 @@
+{
+    "asset": "7b1df3fa6e24c44479dfc50f92c2c3aa",
+    "fileName": "01a130f2-b0e9-79d5-849c-d0323e5b8688.fbx",
+    "prompt": "A swordsman holding a one-handed sword in the right hand raises the blade above the left shoulder and performs a powerful diagonal slash, cutting from upper left down to lower right while stepping half a step forward, then recovers to a ready fighting stance.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 508441402,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}
