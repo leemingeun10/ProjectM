@@ -283,7 +283,7 @@ namespace Game.Client.Stage
                 note = RecordClear(stageIndex);
 
             messageText.text = note ?? string.Empty;
-            flow.GoTo(GameScreen.Battle, () => replayController.StartReplay(result, note));
+            flow.GoTo(GameScreen.Battle, () => replayController.StartReplay(result, playerSteps, aiSteps, note));
         }
 
         // Unlike stage clears, the PvP result is reported when the replay ends (or is closed early;
@@ -299,7 +299,7 @@ namespace Game.Client.Stage
             LogResult("[Pvp] PvP", result);
 
             messageText.text = string.Empty;
-            flow.GoTo(GameScreen.Battle, () => replayController.StartReplay(result, "비무", () =>
+            flow.GoTo(GameScreen.Battle, () => replayController.StartReplay(result, playerSteps, opponentSteps, "비무", () =>
             {
                 pvpBackend.ReportResult(result.Outcome);
                 RefreshPvpRecord();

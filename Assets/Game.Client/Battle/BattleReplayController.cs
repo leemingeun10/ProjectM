@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Game.Client.Flow;
 using Game.Sim.Battle;
+using Game.Sim.Technique;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,9 +15,12 @@ namespace Game.Client.Battle
     // speed follows the replay speed and freezes while paused.
     // Lives on the battle screen: when the replay ends a result panel offers "다시 보기" and
     // "홈으로", and leaving the battle screen by any route closes the replay.
+    // Each turn also shows both sides' recorded strokes for that turn (drawn in step with the
+    // swing) and a one-line explanation of how the turn resolved (TurnNarrator).
     public class BattleReplayController : MonoBehaviour
     {
-        private const float TurnInterval = 1.2f;
+        // Long enough to read the turn's one-line explanation at 1x; 2x halves it like everything else.
+        private const float TurnInterval = 1.6f;
         private const float HpLerpDuration = 0.3f;
         private const float FastSpeed = 2f;
         // Fraction of a turn at which the blades are treated as meeting: hit reactions and the
@@ -52,8 +56,11 @@ namespace Game.Client.Battle
         [SerializeField] private WorldHpBar worldHpA;
         [SerializeField] private WorldHpBar worldHpB;
         [SerializeField] private ImpactFlash impactFlash;
+        [SerializeField] private TurnStrokeComparisonPanel strokeComparison;
 
         private BattleResult currentResult;
+        private IReadOnlyList<TechniqueStep> currentStepsA;
+        private IReadOnlyList<TechniqueStep> currentStepsB;
         private string currentResultNote;
         private Action pendingOnFinished;
         private Coroutine replayRoutine;
@@ -75,6 +82,7 @@ namespace Game.Client.Battle
             if (worldHpA == null) missing.Add(nameof(worldHpA));
             if (worldHpB == null) missing.Add(nameof(worldHpB));
             if (impactFlash == null) missing.Add(nameof(impactFlash));
+            if (strokeComparison == null) missing.Add(nameof(strokeComparison));
             if (missing.Count == 0)
                 return;
 
@@ -113,13 +121,18 @@ namespace Game.Client.Battle
         }
 
         // Replaces any replay in progress with the new result and plays it from the start.
+        // stepsA/stepsB are the two sequences the result was simulated from (A = player), used
+        // only to show each turn's strokes.
         // resultNote, if given, is shown under the outcome when the replay ends.
         // onFinished runs exactly once: when the replay first reaches its end, or earlier if the
         // replay is closed or replaced first, so skipping a replay cannot skip its consequences.
-        public void StartReplay(BattleResult result, string resultNote = null, Action onFinished = null)
+        public void StartReplay(BattleResult result, IReadOnlyList<TechniqueStep> stepsA, IReadOnlyList<TechniqueStep> stepsB,
+            string resultNote = null, Action onFinished = null)
         {
             FireFinished();
             currentResult = result;
+            currentStepsA = stepsA;
+            currentStepsB = stepsB;
             currentResultNote = resultNote;
             pendingOnFinished = onFinished;
             replayPanel.SetActive(true);
@@ -141,6 +154,7 @@ namespace Game.Client.Battle
             SetHp(BattleConstants.StartingHP, BattleConstants.StartingHP);
             turnText.text = $"턴 0 / {BattleSimulator.TurnsPerBattle}";
             descriptionText.text = string.Empty;
+            strokeComparison.Clear();
             resultPanel.SetActive(false);
             UpdateControlLabels();
             replayRoutine = StartCoroutine(PlayTurns(currentResult));
@@ -176,6 +190,7 @@ namespace Game.Client.Battle
             characterB.StopToIdle();
             SetMotionSpeed(1f);
             cameraRig.SetFocused(false);
+            strokeComparison.Clear();
             replayPanel.SetActive(false);
             resultPanel.SetActive(false);
             SetWorldHpVisible(false);
@@ -198,7 +213,9 @@ namespace Game.Client.Battle
             foreach (TurnEvent e in result.Events)
             {
                 turnText.text = $"턴 {e.TurnIndex + 1} / {BattleSimulator.TurnsPerBattle}";
-                descriptionText.text = DescribeTurn(e);
+                descriptionText.text = TurnNarrator.Describe(e);
+                strokeComparison.Show(StepAt(currentStepsA, e.TurnIndex), StepAt(currentStepsB, e.TurnIndex), e.TypeA, e.TypeB);
+                strokeComparison.SetReveal(0f);
                 characterA.Play(MotionStateFor(e.TypeA));
                 characterB.Play(MotionStateFor(e.TypeB));
                 cameraRig.SetFocused(true);
@@ -215,6 +232,8 @@ namespace Game.Client.Battle
                 while (elapsed < TurnInterval / speed)
                 {
                     float turnProgress = elapsed * speed / TurnInterval;
+                    // The previews finish drawing as the blades meet.
+                    strokeComparison.SetReveal(turnProgress / ImpactFraction);
                     if (!impactShown && turnProgress >= ImpactFraction)
                     {
                         impactShown = true;
@@ -237,6 +256,7 @@ namespace Game.Client.Battle
                 shownA = toA;
                 shownB = toB;
                 SetHp(shownA, shownB);
+                strokeComparison.SetReveal(1f);
                 cameraRig.SetFocused(false);
             }
 
@@ -261,6 +281,9 @@ namespace Game.Client.Battle
             pendingOnFinished = null;
             callback?.Invoke();
         }
+
+        private static TechniqueStep? StepAt(IReadOnlyList<TechniqueStep> steps, int turnIndex)
+            => steps != null && turnIndex >= 0 && turnIndex < steps.Count ? steps[turnIndex] : (TechniqueStep?)null;
 
         private void SetMotionSpeed(float motionSpeed)
         {
@@ -312,31 +335,6 @@ namespace Game.Client.Battle
             speedLabel.text = speed > 1f ? "2x" : "1x";
             if (!isFinished)
                 SetMotionSpeed(isPaused ? 0f : speed);
-        }
-
-        private static string DescribeTurn(TurnEvent e)
-            => $"나 {DescribeStepType(e.TypeA)}  vs  상대 {DescribeStepType(e.TypeB)}\n{DescribeReason(e.Reason)}  ·  나 -{e.DamageToA}  상대 -{e.DamageToB}";
-
-        private static string DescribeStepType(BattleStepType type)
-        {
-            switch (type)
-            {
-                case BattleStepType.Slash: return "검로";
-                case BattleStepType.Thrust: return "찌르기";
-                case BattleStepType.Counter: return "반격";
-                default: return type.ToString();
-            }
-        }
-
-        private static string DescribeReason(TurnReason reason)
-        {
-            switch (reason)
-            {
-                case TurnReason.CrossContact: return "접촉 성공";
-                case TurnReason.Miss: return "접촉 실패";
-                case TurnReason.Unconditional: return "무조건 판정";
-                default: return reason.ToString();
-            }
         }
 
         private static string DescribeOutcome(BattleOutcome outcome)
