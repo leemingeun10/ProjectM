@@ -16289,6 +16289,68 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1435226712}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1438059443
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1438059445}
+  - component: {fileID: 1438059444}
+  m_Layer: 0
+  m_Name: AnimationLab (temp)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1438059444
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1438059443}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 342eb69bda2b96f4ca1a76ebcfd375fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Client::Game.Client.Temp.AnimationLab.AnimationLab
+  entryParent: {fileID: 1907187711}
+  characterPrefab: {fileID: 919132149155446097, guid: f24430f0ac5ba9e4ba49682006db5dbc, type: 3}
+  idleClip: {fileID: -203655887218126122, guid: 64ca026c08b580e4cb0a2c8d2d7e0d5b, type: 3}
+  clips:
+  - label: "\uBCA0\uAE30 (\uAE30\uC874)"
+    clip: {fileID: -203655887218126122, guid: 5a7ef269b63966a49b845ccd9fa66b2d, type: 3}
+  - label: "\uCC0C\uB974\uAE30 (\uAE30\uC874)"
+    clip: {fileID: -203655887218126122, guid: b0f3cd8203b57594a833a867735d968e, type: 3}
+  - label: "\uB9C9\uAE30 (\uAE30\uC874)"
+    clip: {fileID: -203655887218126122, guid: 7df7a048597922642addac9704023df8, type: 3}
+  - label: "\uAC00\uB85C\uBCA0\uAE30 A (AI)"
+    clip: {fileID: 7400000, guid: 258e468bb17ae0147b3a45278051e933, type: 2}
+  - label: "\uAC00\uB85C\uBCA0\uAE30 B (AI)"
+    clip: {fileID: 7400000, guid: 91a0857f44718bb4685cbb7abd97ed4a, type: 2}
+  - label: "\uC138\uB85C\uBCA0\uAE30 (AI)"
+    clip: {fileID: 7400000, guid: cf549f578d90d024f94b6bf56b04bad3, type: 2}
+  - label: "\uD53C\uACA9 (AI)"
+    clip: {fileID: 7400000, guid: 0784a8280061c95418a2e75d0631b1c7, type: 2}
+--- !u!4 &1438059445
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1438059443}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1439239258
 GameObject:
   m_ObjectHideFlags: 0
@@ -22630,3 +22692,4 @@ SceneRoots:
   - {fileID: 878642148}
   - {fileID: 1497238503}
   - {fileID: 1382461946}
+  - {fileID: 1438059445}

@@ -1,0 +1,12 @@
+{
+    "asset": "0784a8280061c95418a2e75d0631b1c7",
+    "fileName": "01a12da8-3f9d-77ec-a8e3-628ea92a3bce.fbx",
+    "prompt": "A fighter in a ready stance gets struck hard in the chest, the upper body snaps backward and the fighter staggers half a step back, then regains balance and returns to a ready fighting stance.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 124936835,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}
