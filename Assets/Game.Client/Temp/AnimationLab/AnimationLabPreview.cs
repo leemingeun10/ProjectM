@@ -9,6 +9,12 @@ namespace Game.Client.Temp.AnimationLab
     // Spawns its own copy of the character, its own camera rendering into a RenderTexture and a
     // floor grid, and drives the Animator through a PlayableGraph so no AnimatorController asset
     // is needed. Clips cross-fade, so what is judged here is the clip itself plus a normal blend.
+    //
+    // LockInPlace: the AI clips are Humanoid with "Bake Into Pose (XZ)" on, so their forward
+    // travel is part of the body pose and applyRootMotion = false does not stop it. When locked,
+    // the character is shifted back each frame after the pose is evaluated so the hips stay over
+    // the origin (feet may slide, like an in-place clip). Display only: clip assets are untouched,
+    // and unlocking puts the character straight back at the origin with the original motion.
     public class AnimationLabPreview
     {
         private static readonly Vector3 Origin = new Vector3(300f, 0f, 300f);
@@ -21,6 +27,8 @@ namespace Game.Client.Temp.AnimationLab
         private readonly GameObject root;
         private readonly Camera camera;
         private readonly Animator animator;
+        private readonly Transform character;
+        private readonly Transform hips;
         private readonly PlayableGraph graph;
         private readonly AnimationMixerPlayable mixer;
         private readonly List<AnimationClipPlayable> playables = new List<AnimationClipPlayable>();
@@ -37,6 +45,9 @@ namespace Game.Client.Temp.AnimationLab
         public bool Paused { get; private set; }
         public bool Repeat { get; set; }
         public View CurrentView { get; private set; } = View.Side;
+        public bool LockInPlace { get; set; } = true;
+        // Horizontal hips offset from the origin that the lock removed this frame (metres).
+        public float LockedDrift { get; private set; }
         public AnimationClip CurrentClip => clips[current];
         public int CurrentIndex => current;
         public float CurrentTime => (float)playables[current].GetTime();
@@ -49,11 +60,13 @@ namespace Game.Client.Temp.AnimationLab
 
             BuildFloor(root.transform);
 
-            GameObject character = Object.Instantiate(characterPrefab, Origin, Quaternion.identity, root.transform);
-            animator = character.GetComponent<Animator>();
+            GameObject characterGo = Object.Instantiate(characterPrefab, Origin, Quaternion.identity, root.transform);
+            character = characterGo.transform;
+            animator = characterGo.GetComponent<Animator>();
             animator.runtimeAnimatorController = null;
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            hips = animator.GetBoneTransform(HumanBodyBones.Hips);
             trail = AttachSword(animator);
 
             Texture = new RenderTexture(1024, 1024, 24) { antiAliasing = 4, name = "AnimationLabRT" };
@@ -182,6 +195,24 @@ namespace Game.Client.Temp.AnimationLab
             for (int i = 0; i < weights.Length; i++)
                 weights[i] = Mathf.MoveTowards(weights[i], i == current ? 1f : 0f, step);
             ApplyWeights();
+        }
+
+        // Call from LateUpdate: the graph has evaluated this frame's pose by then.
+        public void ApplyLock()
+        {
+            if (hips == null || !LockInPlace)
+            {
+                character.position = Origin;
+                LockedDrift = 0f;
+                return;
+            }
+
+            // The hips' offset from the character root depends only on the pose, not on where the
+            // root currently is, so this cancels the drift without feedback from last frame's shift.
+            Vector3 drift = hips.position - character.position;
+            drift.y = 0f;
+            character.position = Origin - drift;
+            LockedDrift = drift.magnitude;
         }
 
         public void Dispose()

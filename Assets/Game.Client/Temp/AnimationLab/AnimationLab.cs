@@ -38,6 +38,7 @@ namespace Game.Client.Temp.AnimationLab
         private Text speedLabel;
         private Text repeatLabel;
         private Text viewLabel;
+        private Text lockLabel;
         private readonly List<int> buttonClipIndex = new List<int>();
         private readonly List<Button> clipButtons = new List<Button>();
         private int speedIndex;
@@ -62,7 +63,8 @@ namespace Game.Client.Temp.AnimationLab
 
             AnimationClip clip = preview.CurrentClip;
             float time = Mathf.Min(preview.CurrentTime, clip.length);
-            infoText.text = $"{ClipLabel(preview.CurrentIndex)}   <color=#A39A88>{clip.name} · {time:0.00} / {clip.length:0.00}초 · {Mathf.RoundToInt(clip.length * clip.frameRate)}프레임</color>";
+            string drift = preview.LockInPlace ? $" · 고정 보정 {preview.LockedDrift:0.00}m" : "";
+            infoText.text = $"{ClipLabel(preview.CurrentIndex)}   <color=#A39A88>{clip.name} · {time:0.00} / {clip.length:0.00}초 · {Mathf.RoundToInt(clip.length * clip.frameRate)}프레임{drift}</color>";
 
             updatingSlider = true;
             scrubSlider.value = clip.length > 0f ? time / clip.length : 0f;
@@ -70,6 +72,12 @@ namespace Game.Client.Temp.AnimationLab
 
             for (int i = 0; i < clipButtons.Count; i++)
                 InkStyle.SetFill(clipButtons[i], buttonClipIndex[i] == preview.CurrentIndex ? InkTheme.Vermilion : InkTheme.InkPanelLight);
+        }
+
+        private void LateUpdate()
+        {
+            if (preview != null && page.activeSelf)
+                preview.ApplyLock();
         }
 
         private void Open()
@@ -125,6 +133,7 @@ namespace Game.Client.Temp.AnimationLab
             speedLabel.text = $"속도 {Speeds[speedIndex]:0.##}x";
             repeatLabel.text = preview.Repeat ? "반복 켬" : "반복 끔";
             viewLabel.text = $"시점 {ViewNames[(int)preview.CurrentView]}";
+            lockLabel.text = preview.LockInPlace ? "제자리 고정 켬" : "제자리 고정 끔";
         }
 
         // ---- UI construction -------------------------------------------------------------
@@ -210,8 +219,17 @@ namespace Game.Client.Temp.AnimationLab
             repeatLabel = MakeControl(rootRt, 2, controlsY, () => preview.Repeat = !preview.Repeat);
             viewLabel = MakeControl(rootRt, 3, controlsY, () => preview.SetView((AnimationLabPreview.View)(((int)preview.CurrentView + 1) % ViewNames.Length)));
 
+            // Off = the clip exactly as generated (it walks forward); on = hips pinned over the origin.
+            Button lockButton = MakeButton(rootRt, "", InkButtonKind.Chip, 28, () =>
+            {
+                preview.LockInPlace = !preview.LockInPlace;
+                RefreshControls();
+            });
+            Place((RectTransform)lockButton.transform, new Vector2(0.5f, 1f), new Vector2(0f, controlsY - 105f), new Vector2(360f, 90f));
+            lockLabel = lockButton.GetComponentInChildren<Text>();
+
             Text hint = MakeText(rootRt, "Hint", "격자 간격 0.5m · 슬라이더를 끌면 일시정지 후 해당 프레임으로 이동", 24, InkTheme.TextMuted, TextAnchor.MiddleCenter);
-            Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, controlsY - 85f), new Vector2(1000f, 40f));
+            Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, controlsY - 190f), new Vector2(1000f, 40f));
         }
 
         private Text MakeControl(RectTransform parent, int slot, float y, Action onClick)
