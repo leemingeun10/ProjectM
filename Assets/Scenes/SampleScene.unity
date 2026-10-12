@@ -16888,6 +16888,12 @@ MonoBehaviour:
     clip: {fileID: 7400000, guid: cf549f578d90d024f94b6bf56b04bad3, type: 2}
   - label: "\uD53C\uACA9 (AI)"
     clip: {fileID: 7400000, guid: 0784a8280061c95418a2e75d0631b1c7, type: 2}
+  - label: "\uC138\uB85C\uBCA0\uAE30 B (AI)"
+    clip: {fileID: 7400000, guid: 56e681ab6875ac04bacbc89699065a12, type: 2}
+  - label: "\uC0AC\uC120 \uC88C\u2192\uC6B0 (AI)"
+    clip: {fileID: 7400000, guid: 60449185b890a4c47b236dc89f667546, type: 2}
+  - label: "\uC0AC\uC120 \uC6B0\u2192\uC88C (AI)"
+    clip: {fileID: 7400000, guid: f92e7701893e80a438e4dcecf4d00d5b, type: 2}
 --- !u!4 &1438059445
 Transform:
   m_ObjectHideFlags: 0

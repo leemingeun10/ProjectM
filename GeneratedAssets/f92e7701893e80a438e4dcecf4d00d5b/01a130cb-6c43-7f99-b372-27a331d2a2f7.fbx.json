@@ -1,0 +1,12 @@
+{
+    "asset": "f92e7701893e80a438e4dcecf4d00d5b",
+    "fileName": "01a130cb-6c43-7f99-b372-27a331d2a2f7.fbx",
+    "prompt": "A swordsman standing in place holds a sword with both hands in a ready stance, lifts the sword above his left shoulder, then performs one quick, clean diagonal slash from upper left down to lower right across the front of the body, and returns to the ready stance. Feet stay planted, no stepping forward, no walking, compact single motion.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 1932072631,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

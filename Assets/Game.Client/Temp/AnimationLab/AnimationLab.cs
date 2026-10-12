@@ -169,15 +169,22 @@ namespace Game.Client.Temp.AnimationLab
 
             previewImage = new GameObject("Preview", typeof(RectTransform), typeof(RawImage)).GetComponent<RawImage>();
             previewImage.transform.SetParent(rootRt, false);
-            Place(previewImage.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -620f), new Vector2(920f, 920f));
+            // 820 rather than 920 leaves room for four rows of clip buttons on a 1920-tall canvas.
+            Place(previewImage.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -570f), new Vector2(820f, 820f));
             InkStyle.EnsureBorder(previewImage.rectTransform, InkTheme.Gold, -4f);
 
             infoText = MakeText(rootRt, "Info", "", 30, InkTheme.TextLight, TextAnchor.MiddleCenter);
             infoText.fontStyle = FontStyle.Bold;
-            Place(infoText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -1120f), new Vector2(1000f, 60f));
+            // Long clip names plus the lock readout overflow one line at 30; shrink to fit instead.
+            infoText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            infoText.verticalOverflow = VerticalWrapMode.Truncate;
+            infoText.resizeTextForBestFit = true;
+            infoText.resizeTextMinSize = 18;
+            infoText.resizeTextMaxSize = 30;
+            Place(infoText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -1020f), new Vector2(1000f, 60f));
 
             scrubSlider = MakeSlider(rootRt);
-            Place((RectTransform)scrubSlider.transform, new Vector2(0.5f, 1f), new Vector2(0f, -1185f), new Vector2(920f, 44f));
+            Place((RectTransform)scrubSlider.transform, new Vector2(0.5f, 1f), new Vector2(0f, -1085f), new Vector2(920f, 44f));
             scrubSlider.onValueChanged.AddListener(v =>
             {
                 if (updatingSlider)
@@ -200,7 +207,7 @@ namespace Game.Client.Temp.AnimationLab
                 Button b = MakeButton(rootRt, entries[i].label, InkButtonKind.Secondary, 30, () => PlayClip(previewIndex));
                 int row = i / columns;
                 int col = i % columns;
-                Place((RectTransform)b.transform, new Vector2(0.5f, 1f), new Vector2((col - 1) * 340f, -1290f - row * 112f), new Vector2(320f, 96f));
+                Place((RectTransform)b.transform, new Vector2(0.5f, 1f), new Vector2((col - 1) * 340f, -1190f - row * 112f), new Vector2(320f, 96f));
                 b.interactable = previewIndex >= 0;
                 if (previewIndex >= 0)
                 {
@@ -209,7 +216,7 @@ namespace Game.Client.Temp.AnimationLab
                 }
             }
 
-            float controlsY = -1290f - ((entries.Count + columns - 1) / columns) * 112f - 30f;
+            float controlsY = -1190f - ((entries.Count + columns - 1) / columns) * 112f - 30f;
             pauseLabel = MakeControl(rootRt, 0, controlsY, () => preview.SetPaused(!preview.Paused));
             speedLabel = MakeControl(rootRt, 1, controlsY, () =>
             {
