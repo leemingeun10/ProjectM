@@ -5,6 +5,7 @@ using Game.Client.Battle;
 using Game.Client.Flow;
 using Game.Client.Progress;
 using Game.Client.Pvp;
+using Game.Client.Stroke;
 using Game.Client.Technique;
 using Game.Client.Ui;
 using Game.Sim.Ai;
@@ -18,6 +19,8 @@ using UnityEngine.UI;
 namespace Game.Client.Stage
 {
     // Battle entry for both the 수련 (PvE stage list) and 비무 (PvP lobby) screens.
+    // 수련 opens on a chapter list (StageChapters); a chapter whose first stage is still locked is
+    // disabled. Picking one shows only that chapter's stages, its last stage marked as the boss.
     // Stage list: one button per StageCatalog entry, locked ones disabled. Picking a stage pits
     // one of the player's complete technique slots (asking which when there are several) against
     // that stage's seeded AI, moves to the battle screen to replay it, and records the clear on a win.
@@ -29,8 +32,20 @@ namespace Game.Client.Stage
     {
         // Darker than InkTheme.Gold so it stays readable on hanji cards.
         private const string ClearedColorTag = "#7A5A1E";
+        // InkTheme.Vermilion, which reads well on hanji.
+        private const string BossColorTag = "#C8432A";
 
         [SerializeField] private GameFlowController flow;
+        // 수련 has two panels: the chapter list, and the stage list of the chosen chapter.
+        [SerializeField] private GameObject chapterPanel;
+        [SerializeField] private RectTransform chapterButtonContainer;
+        // Inactive template cloned once per chapter; must have a Text child for the label.
+        [SerializeField] private Button chapterButtonTemplate;
+        [SerializeField] private GameObject stagePanel;
+        [SerializeField] private Text stagePanelTitle;
+        // Header title, and the "장 선택" button shown next to 홈으로 while a chapter is open.
+        [SerializeField] private Text trainingHeaderTitle;
+        [SerializeField] private Button chapterBackButton;
         [SerializeField] private RectTransform stageButtonContainer;
         // Inactive template cloned once per stage; must have a Text child for the label.
         [SerializeField] private Button stageButtonTemplate;
@@ -51,7 +66,10 @@ namespace Game.Client.Stage
         [SerializeField] private Button slotPickCancelButton;
         [SerializeField] private Button slotPickWorkshopButton;
 
+        private readonly List<Button> chapterButtons = new List<Button>();
         private readonly List<Button> stageButtons = new List<Button>();
+        // Chapter whose stages are listed; 0 while the chapter list is shown.
+        private int openChapter;
         private ProgressData progress;
         private Action<int> pendingSlotAction;
         // Swap point for a real server: nothing else here knows which backend is in use.
@@ -62,6 +80,17 @@ namespace Game.Client.Stage
             progress = ProgressStore.Load();
             pvpBackend = new LocalFakePvpBackend();
             stageButtonTemplate.gameObject.SetActive(false);
+            chapterButtonTemplate.gameObject.SetActive(false);
+
+            for (int chapter = 1; chapter <= StageChapters.ChapterCount; chapter++)
+            {
+                Button button = Instantiate(chapterButtonTemplate, chapterButtonContainer);
+                button.name = $"Chapter{chapter}";
+                button.gameObject.SetActive(true);
+                int chosen = chapter;
+                button.onClick.AddListener(() => OpenChapter(chosen));
+                chapterButtons.Add(button);
+            }
 
             foreach (StageDefinition stage in StageCatalog.Stages)
             {
@@ -70,6 +99,8 @@ namespace Game.Client.Stage
                 button.gameObject.SetActive(true);
                 int stageIndex = stage.StageIndex;
                 button.onClick.AddListener(() => PlayStage(stageIndex));
+                if (StageChapters.IsBoss(stageIndex))
+                    MarkAsBoss(button);
                 stageButtons.Add(button);
             }
 
@@ -81,7 +112,7 @@ namespace Game.Client.Stage
 
             messageText.text = string.Empty;
             slotPickPanel.SetActive(false);
-            RefreshStageButtons();
+            ShowChapterList();
             RefreshPvpRecord();
         }
 
@@ -90,6 +121,7 @@ namespace Game.Client.Stage
             slotPickCancelButton.onClick.AddListener(CloseSlotPick);
             slotPickWorkshopButton.onClick.AddListener(GoToWorkshop);
             pvpButton.onClick.AddListener(PlayPvp);
+            chapterBackButton.onClick.AddListener(ShowChapterList);
             flow.ScreenEntered += OnScreenEntered;
             flow.ScreenExited += OnScreenExited;
         }
@@ -99,17 +131,16 @@ namespace Game.Client.Stage
             slotPickCancelButton.onClick.RemoveListener(CloseSlotPick);
             slotPickWorkshopButton.onClick.RemoveListener(GoToWorkshop);
             pvpButton.onClick.RemoveListener(PlayPvp);
+            chapterBackButton.onClick.RemoveListener(ShowChapterList);
             flow.ScreenEntered -= OnScreenEntered;
             flow.ScreenExited -= OnScreenExited;
         }
 
         private void OnScreenEntered(GameScreen screen)
         {
+            // Every visit starts from the chapter list.
             if (screen == GameScreen.Training)
-            {
-                messageText.text = string.Empty;
-                RefreshStageButtons();
-            }
+                ShowChapterList();
             else if (screen == GameScreen.Sparring)
             {
                 RefreshPvpRecord();
@@ -125,21 +156,82 @@ namespace Game.Client.Stage
             flow.GoTo(GameScreen.Workshop);
         }
 
+        private void ShowChapterList()
+        {
+            openChapter = 0;
+            CloseSlotPick();
+            messageText.text = string.Empty;
+            chapterPanel.SetActive(true);
+            stagePanel.SetActive(false);
+            chapterBackButton.gameObject.SetActive(false);
+            trainingHeaderTitle.text = "수련";
+            RefreshStageButtons();
+        }
+
+        private void OpenChapter(int chapter)
+        {
+            // The button is disabled while locked; this guards against a stale click.
+            if (!StageChapters.IsUnlocked(progress, chapter))
+                return;
+
+            openChapter = chapter;
+            messageText.text = string.Empty;
+            chapterPanel.SetActive(false);
+            stagePanel.SetActive(true);
+            chapterBackButton.gameObject.SetActive(true);
+            trainingHeaderTitle.text = $"수련 · {ChapterName(chapter)}";
+            stagePanelTitle.text = $"{ChapterName(chapter)} — 스테이지를 골라 수련하라";
+            RefreshStageButtons();
+        }
+
+        // Placeholder until chapters get their own themes.
+        private static string ChapterName(int chapter) => $"{chapter}장";
+
+        // Boss stages keep the hanji card but get a heavier vermilion frame and a 보스전 line.
+        private static void MarkAsBoss(Button button)
+        {
+            UIRectOutline border = InkStyle.EnsureBorder(button.GetComponent<RectTransform>(), InkTheme.Vermilion, 5f);
+            border.Thickness = 4f;
+            button.GetComponent<InkButtonLabel>().Configure(button, button.GetComponentInChildren<Text>(true), border,
+                InkTheme.TextDark, InkTheme.Vermilion);
+        }
+
         private void RefreshStageButtons()
         {
+            for (int i = 0; i < chapterButtons.Count; i++)
+            {
+                int chapter = i + 1;
+                int first = StageChapters.FirstStage(chapter);
+                int last = StageChapters.LastStage(chapter);
+                int cleared = StageChapters.ClearedCount(progress, chapter);
+                bool unlocked = StageChapters.IsUnlocked(progress, chapter);
+
+                Button button = chapterButtons[i];
+                button.interactable = unlocked;
+                string detail = !unlocked ? $"잠김 · 스테이지 {first - 1} 클리어 시 해제"
+                    : cleared == last - first + 1 ? $"스테이지 {first}–{last} · <color={ClearedColorTag}>모두 클리어</color>"
+                    : $"스테이지 {first}–{last} · {cleared} / {last - first + 1} 클리어";
+                button.GetComponentInChildren<Text>(true).text = $"{ChapterName(chapter)}\n<size=26>{detail}</size>";
+            }
+
             for (int i = 0; i < stageButtons.Count; i++)
             {
                 StageDefinition stage = StageCatalog.Stages[i];
                 bool unlocked = ProgressRules.IsStageUnlocked(progress, stage.StageIndex);
                 bool cleared = stage.StageIndex <= progress.HighestClearedStage;
 
-                // Locked colours come from InkButtonLabel, which follows interactable.
+                // Locked colours come from InkButtonLabel, which follows interactable; a colour tag
+                // would override them, so a locked boss line stays untagged.
                 Button button = stageButtons[i];
+                button.gameObject.SetActive(StageChapters.ChapterOf(stage.StageIndex) == openChapter);
                 button.interactable = unlocked;
-                Text label = button.GetComponentInChildren<Text>(true);
-                label.text = cleared ? $"{stage.StageIndex}\n<size=24><color={ClearedColorTag}>클리어</color></size>"
-                    : unlocked ? $"{stage.StageIndex}\n<size=24>{DescribeDifficulty(stage.Difficulty)}</size>"
-                    : $"{stage.StageIndex}\n<size=24>잠김</size>";
+                string bossLine = !StageChapters.IsBoss(stage.StageIndex) ? string.Empty
+                    : unlocked ? $"\n<size=26><color={BossColorTag}>보스전</color></size>"
+                    : "\n<size=26>보스전</size>";
+                string status = cleared ? $"<color={ClearedColorTag}>클리어</color>"
+                    : unlocked ? DescribeDifficulty(stage.Difficulty)
+                    : "잠김";
+                button.GetComponentInChildren<Text>(true).text = $"{stage.StageIndex}{bossLine}\n<size=24>{status}</size>";
             }
 
             bool pvpUnlocked = ProgressRules.IsPvpUnlocked(progress);
@@ -321,7 +413,11 @@ namespace Game.Client.Stage
 
             var sb = new StringBuilder($"스테이지 {stageIndex} 클리어!");
             if (StageCatalog.IsValidStageIndex(stageIndex + 1))
+            {
                 sb.Append($"\n다음 스테이지({stageIndex + 1}) 해제!");
+                if (StageChapters.IsBoss(stageIndex))
+                    sb.Append($"\n{ChapterName(StageChapters.ChapterOf(stageIndex + 1))} 해제!");
+            }
             else
                 sb.Append("\n모든 스테이지 클리어!");
             if (!pvpWasUnlocked && ProgressRules.IsPvpUnlocked(progress))
