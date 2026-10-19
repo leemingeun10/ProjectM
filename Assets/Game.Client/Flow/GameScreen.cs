@@ -13,5 +13,7 @@ namespace Game.Client.Flow
         Sparring,
         // Battle replay, entered from Training or Sparring.
         Battle,
+        // 단련: once-a-day 외공/내공 training.
+        Cultivation,
     }
 }

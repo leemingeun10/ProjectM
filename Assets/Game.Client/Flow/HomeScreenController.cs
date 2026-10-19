@@ -1,28 +1,34 @@
+using Game.Client.Cultivation;
 using Game.Client.Progress;
 using Game.Client.Technique;
+using Game.Sim.Cultivation;
 using Game.Sim.Progress;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Game.Client.Flow
 {
-    // Main hub: 무공 제작 (draw techniques), 수련 (stages) and 비무 (PvP). 비무 stays locked until
-    // the PvP unlock stage is cleared, using the same ProgressRules check as the PvP lobby.
+    // Main hub: 무공 제작 (draw techniques), 수련 (stages), 비무 (PvP) and 단련 (daily training).
+    // 비무 stays locked until the PvP unlock stage is cleared, using the same ProgressRules check
+    // as the PvP lobby.
     public class HomeScreenController : MonoBehaviour
     {
         [SerializeField] private GameFlowController flow;
         [SerializeField] private Button workshopButton;
         [SerializeField] private Button trainingButton;
         [SerializeField] private Button sparringButton;
+        [SerializeField] private Button cultivationButton;
         [SerializeField] private Text workshopLabel;
         [SerializeField] private Text trainingLabel;
         [SerializeField] private Text sparringLabel;
+        [SerializeField] private Text cultivationLabel;
 
         private void OnEnable()
         {
             workshopButton.onClick.AddListener(OpenWorkshop);
             trainingButton.onClick.AddListener(OpenTraining);
             sparringButton.onClick.AddListener(OpenSparring);
+            cultivationButton.onClick.AddListener(OpenCultivation);
             Refresh();
         }
 
@@ -31,11 +37,14 @@ namespace Game.Client.Flow
             workshopButton.onClick.RemoveListener(OpenWorkshop);
             trainingButton.onClick.RemoveListener(OpenTraining);
             sparringButton.onClick.RemoveListener(OpenSparring);
+            cultivationButton.onClick.RemoveListener(OpenCultivation);
         }
 
         private void OpenWorkshop() => flow.GoTo(GameScreen.Workshop);
 
         private void OpenTraining() => flow.GoTo(GameScreen.Training);
+
+        private void OpenCultivation() => flow.GoTo(GameScreen.Cultivation);
 
         private void OpenSparring()
         {
@@ -65,6 +74,10 @@ namespace Game.Client.Flow
             sparringLabel.text = pvpUnlocked
                 ? "비무\n<size=26>다른 무인과 겨루기</size>"
                 : $"비무\n<size=26>스테이지 {StageCatalog.PvpUnlockStageIndex} 클리어 시 해제</size>";
+
+            CultivationStats stats = CultivationStore.Load();
+            string todayState = CultivationRules.HasTrainedToday(stats, CultivationStore.Today()) ? "오늘의 수련 완료" : "오늘의 수련 가능";
+            cultivationLabel.text = $"단련\n<size=26>외공 {stats.ExternalPower} · 내공 {stats.InternalPower} · {todayState}</size>";
         }
     }
 }

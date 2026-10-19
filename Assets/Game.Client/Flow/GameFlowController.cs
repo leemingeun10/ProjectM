@@ -17,6 +17,7 @@ namespace Game.Client.Flow
         [SerializeField] private GameObject trainingScreen;
         [SerializeField] private GameObject sparringScreen;
         [SerializeField] private GameObject battleScreen;
+        [SerializeField] private GameObject cultivationScreen;
         // Overlays shown on the menu-like screens (e.g. the PvP record HUD); hidden on the title
         // and during battle, where the HP bars take the top of the screen.
         [SerializeField] private GameObject hudRoot;
@@ -96,6 +97,7 @@ namespace Game.Client.Flow
             trainingScreen.SetActive(screen == GameScreen.Training);
             sparringScreen.SetActive(screen == GameScreen.Sparring);
             battleScreen.SetActive(screen == GameScreen.Battle);
+            cultivationScreen.SetActive(screen == GameScreen.Cultivation);
             hudRoot.SetActive(screen != GameScreen.Title && screen != GameScreen.Battle);
             strokeInput.enabled = screen == GameScreen.Workshop;
         }

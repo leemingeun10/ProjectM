@@ -1,0 +1,12 @@
+{
+    "asset": "68faec3fcb3035b499de1274988ddc8f",
+    "fileName": "01a15291-8a20-776b-a423-acc72279d3dd.fbx",
+    "prompt": "A martial artist lies face down in a plank position and does exactly five steady push-ups, chest lowering close to the floor each time, then pushes back up and kneels.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 1807529998,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

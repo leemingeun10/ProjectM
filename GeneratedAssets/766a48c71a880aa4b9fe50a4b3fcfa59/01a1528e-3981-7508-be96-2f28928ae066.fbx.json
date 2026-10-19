@@ -1,0 +1,12 @@
+{
+    "asset": "766a48c71a880aa4b9fe50a4b3fcfa59",
+    "fileName": "01a1528e-3981-7508-be96-2f28928ae066.fbx",
+    "prompt": "A martial artist sitting cross-legged on the floor in a lotus meditation pose, back straight, hands resting on the knees, breathing slowly and calmly with subtle chest and shoulder movement, staying in place.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 1821392520,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}
