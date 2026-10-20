@@ -1,0 +1,31 @@
+{
+    "asset": "0c251e1665b239540b7448f3b6606def",
+    "fileName": "01a15146-b31e-7ec4-974f-80e30baec3b7.png",
+    "prompt": "Full-body character concept art of a wuxia swordsman in black, front view, symmetrical T-pose with arms straight out horizontally, palms down, legs slightly apart, standing straight, facing camera directly. Slim athletic young man, black hair tied up in a topknot with a black cloth band. Wears a fitted black martial arts outfit (close-fitting jacket with cross-collar, black trousers tucked into black cloth boots), dark leather belt with simple silver buckle, black wrist guards. Clothing is tight to the body, no long robes, no loose sleeves, no cape, no flowing cloth. Empty hands, no sword, no weapons, no accessories hanging. Plain neutral light gray background, even studio lighting, no shadows on background. Stylized semi-realistic game character, clean readable silhouette, entire body visible from head to feet, suitable as reference for 3D model generation.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}

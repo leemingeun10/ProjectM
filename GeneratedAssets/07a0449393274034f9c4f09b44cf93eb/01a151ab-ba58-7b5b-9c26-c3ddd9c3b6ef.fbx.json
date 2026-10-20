@@ -1,0 +1,23 @@
+{
+    "asset": "07a0449393274034f9c4f09b44cf93eb",
+    "fileName": "01a151ab-ba58-7b5b-9c26-c3ddd9c3b6ef.fbx",
+    "prompt": "Stylized semi-realistic wandering ronin swordsman, weathered patched indigo jacket, cloth sash with rope, bandaged forearms, leg wrappings, straw sandals, T-pose, game-ready character with detailed PBR textures",
+    "negativePrompt": "",
+    "model": "model3d-tripo-p2",
+    "modelName": "Tripo P2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "promptImageReferenceGuid": "162d0913605cd6745a5929177271e599",
+    "modelReferenceGuid": "",
+    "multiviewFrontGuid": "",
+    "multiviewBackGuid": "",
+    "multiviewLeftGuid": "",
+    "multiviewRightGuid": "",
+    "multiviewTopGuid": "",
+    "multiviewBottomGuid": "",
+    "multiviewLeftFrontGuid": "",
+    "multiviewRightFrontGuid": "",
+    "faceLimit": -1
+}

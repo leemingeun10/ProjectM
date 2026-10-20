@@ -17929,6 +17929,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Client::Game.Client.Temp.AnimationLab.AnimationLab
   entryParent: {fileID: 1907187711}
   characterPrefab: {fileID: 919132149155446097, guid: f24430f0ac5ba9e4ba49682006db5dbc, type: 3}
+  characterLabel: "\uAE30\uBCF8"
+  extraCharacters:
+  - label: "\uD751\uC758 \uAC80\uAC1D"
+    prefab: {fileID: 7280757890411076456, guid: 72baf801f2f36a9468948c5348798261, type: 3}
+  - label: "\uD751\uC758 \uAC80\uAC1D (\uC8FC\uBA39)"
+    prefab: {fileID: 2561486276947761668, guid: 0fccb4920f7836542b46e7c0ca9772c4, type: 3}
+  - label: "\uB0AD\uC778"
+    prefab: {fileID: 8383351483875926488, guid: 97018d5039cf8bc4b9cf647e521a13e3, type: 3}
+  - label: "\uB0AD\uC778 (\uC8FC\uBA39)"
+    prefab: {fileID: 2325808217355632463, guid: 283722564301f8a4786236637e64ae98, type: 3}
   idleClip: {fileID: -203655887218126122, guid: 64ca026c08b580e4cb0a2c8d2d7e0d5b, type: 3}
   clips:
   - label: "\uBCA0\uAE30 (\uAE30\uC874)"

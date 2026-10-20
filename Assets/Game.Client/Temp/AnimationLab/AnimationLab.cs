@@ -21,7 +21,17 @@ namespace Game.Client.Temp.AnimationLab
 
         [Tooltip("Where the entry button is added (the home screen root).")]
         [SerializeField] private RectTransform entryParent;
+        [Serializable]
+        public class LabCharacter
+        {
+            public string label;
+            public GameObject prefab;
+        }
+
         [SerializeField] private GameObject characterPrefab;
+        [SerializeField] private string characterLabel = "기본";
+        [Tooltip("Optional extra Humanoid characters (e.g. AI-generated ones) to try the same clips on. The character button cycles through the default one and these.")]
+        [SerializeField] private List<LabCharacter> extraCharacters = new List<LabCharacter>();
         [SerializeField] private AnimationClip idleClip;
         [SerializeField] private List<LabClip> clips = new List<LabClip>();
 
@@ -39,6 +49,9 @@ namespace Game.Client.Temp.AnimationLab
         private Text repeatLabel;
         private Text viewLabel;
         private Text lockLabel;
+        private Text characterButtonLabel;
+        // 0 = characterPrefab, i > 0 = extraCharacters[i - 1].
+        private int characterIndex;
         private readonly List<int> buttonClipIndex = new List<int>();
         private readonly List<Button> clipButtons = new List<Button>();
         private int speedIndex;
@@ -83,19 +96,52 @@ namespace Game.Client.Temp.AnimationLab
         private void Open()
         {
             if (preview == null)
-            {
-                var list = new List<AnimationClip> { idleClip };
-                foreach (LabClip c in clips)
-                {
-                    if (c.clip != null)
-                        list.Add(c.clip);
-                }
-                preview = new AnimationLabPreview(characterPrefab, list);
-                previewImage.texture = preview.Texture;
-            }
+                CreatePreview();
 
             page.SetActive(true);
             preview.SetActive(true);
+            RefreshControls();
+        }
+
+        private void CreatePreview()
+        {
+            var list = new List<AnimationClip> { idleClip };
+            foreach (LabClip c in clips)
+            {
+                if (c.clip != null)
+                    list.Add(c.clip);
+            }
+            GameObject prefab = characterIndex == 0 ? characterPrefab : extraCharacters[characterIndex - 1].prefab;
+            preview = new AnimationLabPreview(prefab, list);
+            previewImage.texture = preview.Texture;
+        }
+
+        private string CharacterLabel => characterIndex == 0 ? characterLabel : extraCharacters[characterIndex - 1].label;
+
+        // Rebuilds the preview rig with the next character, keeping view, speed, repeat, lock
+        // and the clip being played so they can be compared on the same motion.
+        private void SwitchCharacter()
+        {
+            AnimationLabPreview.View view = preview.CurrentView;
+            bool repeat = preview.Repeat;
+            bool lockInPlace = preview.LockInPlace;
+            bool paused = preview.Paused;
+            int clipIndex = preview.CurrentIndex;
+
+            preview.Dispose();
+            do
+                characterIndex = (characterIndex + 1) % (extraCharacters.Count + 1);
+            while (characterIndex != 0 && extraCharacters[characterIndex - 1].prefab == null);
+            CreatePreview();
+
+            preview.SetView(view);
+            preview.SetSpeed(Speeds[speedIndex]);
+            preview.Repeat = repeat;
+            preview.LockInPlace = lockInPlace;
+            preview.SetActive(true);
+            if (clipIndex != 0)
+                preview.PlayIndex(clipIndex);
+            preview.SetPaused(paused);
             RefreshControls();
         }
 
@@ -134,6 +180,8 @@ namespace Game.Client.Temp.AnimationLab
             repeatLabel.text = preview.Repeat ? "반복 켬" : "반복 끔";
             viewLabel.text = $"시점 {ViewNames[(int)preview.CurrentView]}";
             lockLabel.text = preview.LockInPlace ? "제자리 고정 켬" : "제자리 고정 끔";
+            if (characterButtonLabel != null)
+                characterButtonLabel.text = $"캐릭터: {CharacterLabel}";
         }
 
         // ---- UI construction -------------------------------------------------------------
@@ -236,8 +284,21 @@ namespace Game.Client.Temp.AnimationLab
                 preview.LockInPlace = !preview.LockInPlace;
                 RefreshControls();
             });
-            Place((RectTransform)lockButton.transform, new Vector2(0.5f, 1f), new Vector2(0f, controlsY - 105f), new Vector2(360f, 90f));
             lockLabel = lockButton.GetComponentInChildren<Text>();
+
+            // Character switch sits beside the lock toggle; without extra characters the lock
+            // toggle keeps its centred spot.
+            if (extraCharacters.Exists(c => c.prefab != null))
+            {
+                Place((RectTransform)lockButton.transform, new Vector2(0.5f, 1f), new Vector2(-190f, controlsY - 105f), new Vector2(360f, 90f));
+                Button characterButton = MakeButton(rootRt, "", InkButtonKind.Chip, 28, SwitchCharacter);
+                Place((RectTransform)characterButton.transform, new Vector2(0.5f, 1f), new Vector2(190f, controlsY - 105f), new Vector2(360f, 90f));
+                characterButtonLabel = characterButton.GetComponentInChildren<Text>();
+            }
+            else
+            {
+                Place((RectTransform)lockButton.transform, new Vector2(0.5f, 1f), new Vector2(0f, controlsY - 105f), new Vector2(360f, 90f));
+            }
 
             Text hint = MakeText(rootRt, "Hint", "격자 간격 0.5m · 슬라이더를 끌면 일시정지 후 해당 프레임으로 이동", 24, InkTheme.TextMuted, TextAnchor.MiddleCenter);
             Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, controlsY - 190f), new Vector2(1000f, 40f));

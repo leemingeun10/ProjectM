@@ -1,0 +1,23 @@
+{
+    "asset": "2cea70406c8f5c245a140413b126825d",
+    "fileName": "01a1514e-2689-715b-964b-b21c75252fdd.fbx",
+    "prompt": "Stylized low-poly wuxia swordsman in black martial arts outfit, T-pose, game-ready character, flat-shaded faceted look",
+    "negativePrompt": "",
+    "model": "model3d-tripo-p2",
+    "modelName": "Tripo P2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "promptImageReferenceGuid": "0c251e1665b239540b7448f3b6606def",
+    "modelReferenceGuid": "",
+    "multiviewFrontGuid": "",
+    "multiviewBackGuid": "",
+    "multiviewLeftGuid": "",
+    "multiviewRightGuid": "",
+    "multiviewTopGuid": "",
+    "multiviewBottomGuid": "",
+    "multiviewLeftFrontGuid": "",
+    "multiviewRightFrontGuid": "",
+    "faceLimit": -1
+}

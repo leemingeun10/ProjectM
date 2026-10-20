@@ -1,0 +1,41 @@
+{
+    "asset": "162d0913605cd6745a5929177271e599",
+    "fileName": "01a151a9-5763-790a-a651-439ad250ef6f.png",
+    "prompt": "Re-render this exact same character as a high-quality stylized semi-realistic 3D game character render (like a modern action game character model), not a sketch. Keep the same design, pose, proportions and outfit: symmetrical T-pose facing the camera, messy black hair in a loose low ponytail, stubble, cheek scar, faded indigo-gray patched cross-collar jacket ending at the hips, bandage-wrapped forearms, brown cloth sash with rope tie, dark charcoal trousers, cloth leg wrappings, straw sandals. Remove ALL text, labels, annotation lines and the parchment paper. Remove the rope ends and bandage strips hanging down: the rope knot is short and tight to the sash, bandage ends tucked in. Fingers held together. Plain neutral light gray background, even studio lighting, soft realistic materials with fabric detail, entire body visible from head to feet, nothing else in the image.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "162d0913605cd6745a5929177271e599",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}

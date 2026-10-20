@@ -1,0 +1,31 @@
+{
+    "asset": "162d0913605cd6745a5929177271e599",
+    "fileName": "01a151a8-9b98-7148-9651-5a4a1519c42e.png",
+    "prompt": "Full-body character concept art of a wandering ronin swordsman from an East Asian wuxia world, front view, symmetrical T-pose with arms straight out horizontally, palms down, fingers together, legs slightly apart, standing straight, facing the camera directly. Lean, battle-hardened man in his thirties: messy long black hair tied in a loose low ponytail with a few loose strands framing the face, light stubble, a thin scar across the left cheek, tired but sharp eyes. Outfit: weathered, faded indigo-gray cross-collar jacket ending at the hips with frayed, patched edges, sleeves ending at the forearm; forearms wrapped in worn off-white cloth bandages; a dark brown cloth sash tied at the waist with a rope cord; fitted dark charcoal trousers tapered and wrapped with cloth bindings from knee to ankle; simple straw-and-cloth sandals over dark socks. Clothing stays close to the body: no long robes, no loose flowing sleeves, no cape, no hat, nothing hanging below the hips. Empty hands, no sword, no weapons. Stylized semi-realistic game character, high detail, rich fabric texture, worn and dusty materials, muted earthy palette. Plain neutral light gray background, even studio lighting, entire body visible from head to feet, suitable as reference for 3D model generation.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}

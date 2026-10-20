@@ -228,7 +228,12 @@ namespace Game.Client.Temp.AnimationLab
                 Object.Destroy(Texture);
             }
             if (root != null)
+            {
+                // Destroy is deferred to the end of the frame; hide the rig now so a replacement
+                // preview built in the same frame (character switch) does not overlap it.
+                root.SetActive(false);
                 Object.Destroy(root);
+            }
         }
 
         private void ApplySpeed()
@@ -249,20 +254,27 @@ namespace Game.Client.Temp.AnimationLab
         }
 
         // Same placeholder blade as the battle characters (TempSword), plus a short trail so the
-        // swing arc is readable.
+        // swing arc is readable. Placed in the character's frame while it is still in its bind
+        // T-pose (called right after Instantiate), not in the hand bone's local axes: those differ
+        // between rigs (e.g. the AI-generated characters), while the T-pose frame does not. For
+        // Character_TPose this gives exactly the old hand-local placement (blade pointing forward,
+        // grip 0.0767 m past the wrist, 0.8 m long).
         private static TrailRenderer AttachSword(Animator animator)
         {
             Transform hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
             if (hand == null)
                 return null;
 
+            Transform body = animator.transform;
             GameObject sword = GameObject.CreatePrimitive(PrimitiveType.Cube);
             sword.name = "LabSword";
             Object.Destroy(sword.GetComponent<Collider>());
-            sword.transform.SetParent(hand, false);
-            sword.transform.localPosition = new Vector3(-0.4f, 0.0767f, 0f);
-            sword.transform.localEulerAngles = new Vector3(0f, 270f, 90f);
-            sword.transform.localScale = new Vector3(0.05f, 0.05f, 0.8f);
+            sword.transform.SetPositionAndRotation(
+                hand.position + body.right * 0.0767f + body.forward * 0.4f,
+                Quaternion.LookRotation(body.forward, body.up));
+            sword.transform.SetParent(hand, true);
+            float handScale = hand.lossyScale.x;
+            sword.transform.localScale = new Vector3(0.05f, 0.05f, 0.8f) / handScale;
             sword.GetComponent<Renderer>().material.color = new Color(0.62f, 0.6f, 0.58f);
 
             var tip = new GameObject("LabSwordTip");

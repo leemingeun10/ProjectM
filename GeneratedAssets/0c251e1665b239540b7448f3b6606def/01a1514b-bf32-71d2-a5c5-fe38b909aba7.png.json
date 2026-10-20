@@ -1,0 +1,41 @@
+{
+    "asset": "0c251e1665b239540b7448f3b6606def",
+    "fileName": "01a1514b-bf32-71d2-a5c5-fe38b909aba7.png",
+    "prompt": "Redraw this exact character as a stylized low-poly 3D game character render. Keep the same symmetrical T-pose, same front view, same proportions, same outfit design (black cross-collar martial arts jacket, dark leather belt with silver buckle, black wrist guards, black trousers, black cloth boots, topknot with black headband). Use simplified faceted geometry with clean flat planes, flat-shaded solid colors, minimal texture detail, slightly simplified stylized face, hands as simple mitten-like shapes with fingers together. Shorten the jacket hem to just below the belt line and remove the hanging belt tail. Plain neutral light gray background, even lighting, full body visible head to feet, no weapons.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "0c251e1665b239540b7448f3b6606def",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}
