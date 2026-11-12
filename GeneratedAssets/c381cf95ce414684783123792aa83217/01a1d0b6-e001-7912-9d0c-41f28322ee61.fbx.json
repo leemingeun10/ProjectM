@@ -1,0 +1,12 @@
+{
+    "asset": "c381cf95ce414684783123792aa83217",
+    "fileName": "01a1d0b6-e001-7912-9d0c-41f28322ee61.fbx",
+    "prompt": "Elegant plum-blossom sword form: fast, light footwork and a rapid series of 3 to 4 short sword thrusts at different angles like scattering petals, graceful flowing arms, end in a poised stance.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 1953595086,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

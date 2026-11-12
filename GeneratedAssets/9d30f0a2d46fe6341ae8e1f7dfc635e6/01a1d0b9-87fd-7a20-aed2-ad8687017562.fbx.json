@@ -1,0 +1,12 @@
+{
+    "asset": "9d30f0a2d46fe6341ae8e1f7dfc635e6",
+    "fileName": "01a1d0b9-87fd-7a20-aed2-ad8687017562.fbx",
+    "prompt": "Imperial sword form: majestic and heavy, wide stance, raise the sword high and hold a beat, then one powerful commanding downward strike, recover to ready stance.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 1906171189,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

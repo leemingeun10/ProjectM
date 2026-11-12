@@ -1,0 +1,12 @@
+{
+    "asset": "50a53f18897cb3c4791a7d0bf1a4b998",
+    "fileName": "01a1d0bc-7495-73a6-9953-cc4a361fc1e9.fbx",
+    "prompt": "Three Powers sword form: a disciplined sequence of three distinct fast strikes in a triangular pattern, a high strike (heaven), a low strike (earth), then a straight mid-level thrust (human), firm stance between each, end in a poised stance.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 1368056884,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

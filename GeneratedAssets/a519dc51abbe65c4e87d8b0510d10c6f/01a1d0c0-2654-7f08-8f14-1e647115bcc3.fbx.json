@@ -1,0 +1,12 @@
+{
+    "asset": "a519dc51abbe65c4e87d8b0510d10c6f",
+    "fileName": "01a1d0c0-2654-7f08-8f14-1e647115bcc3.fbx",
+    "prompt": "Moon-shadow sword form: smooth gliding sidesteps along a circular arc, a crescent-shaped sweeping sword cut, then a quick feint and a silent low slash, light and elusive, end in a poised stance.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 1128018040,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}
