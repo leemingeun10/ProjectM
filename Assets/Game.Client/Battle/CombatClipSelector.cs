@@ -26,7 +26,6 @@ namespace Game.Client.Battle
     {
         public const string ThrustState = "Combat_Thrust";
         public const string SlashLeftToRightState = "Combat_SlashLR";
-        // Combat_SlashLR played through a mirrored Animator state.
         public const string SlashRightToLeftState = "Combat_SlashRL";
         public const string SlashTopToBottomState = "Combat_SlashDown";
         public const string SlashBottomToTopState = "Combat_SlashUp";
