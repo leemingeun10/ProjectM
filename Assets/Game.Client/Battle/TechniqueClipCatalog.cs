@@ -21,13 +21,16 @@ namespace Game.Client.Battle
 
     // Technique id + stage -> clip. Lengths and strikes are measured from the cut clips in
     // CharacterArt/Combat (an EditMode test checks the lengths against the assets); recutting a clip
-    // means updating its entry here.
+    // means updating its entry here. Clips are cut so a technique turn (clip + tail, see
+    // ReplayTurnTiming) stays within MaxTurnSeconds even with techniques on both sides.
     public static class TechniqueClipCatalog
     {
         public const string SamjaeStage1State = "Skill_Samjae1";
         public const string MaehwaStage1State = "Skill_Maehwa1";
         public const string JewangStage1State = "Skill_Jewang1";
         public const string WolyeongStage1State = "Skill_Wolyeong1";
+
+        public const float MaxTurnSeconds = 3f;
 
         // Stage 2 clips go in a matching branch per technique when they exist.
         public static bool TryGet(string techniqueId, int stage, out TechniqueClip clip)
@@ -38,10 +41,10 @@ namespace Game.Client.Battle
 
             switch (techniqueId)
             {
-                // Downward cut (the first and fastest of its three strikes).
-                case ShapeTemplates.TriangleId: clip = new TechniqueClip(SamjaeStage1State, 2.2f, 0.617f); return true;
-                // First, longest lunge of the thrust flurry.
-                case ShapeTemplates.FlowerId: clip = new TechniqueClip(MaehwaStage1State, 2.05f, 0.4f); return true;
+                // Closing sideways sweep (the last of its three strikes).
+                case ShapeTemplates.TriangleId: clip = new TechniqueClip(SamjaeStage1State, 2.25f, 1.933f); return true;
+                // Last thrust of the flurry.
+                case ShapeTemplates.FlowerId: clip = new TechniqueClip(MaehwaStage1State, 2.3f, 1.983f); return true;
                 // The single downward strike after the held raise.
                 case ShapeTemplates.SwordId: clip = new TechniqueClip(JewangStage1State, 2.2f, 1.6f); return true;
                 // Closing low slash.

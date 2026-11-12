@@ -124,17 +124,38 @@ namespace Game.Tests
             Assert.AreEqual(0.18f + 2f + 0.4f, t.Interval, Eps);
         }
 
+        private static readonly string[] AllIds =
+            { ShapeTemplates.TriangleId, ShapeTemplates.FlowerId, ShapeTemplates.SwordId, ShapeTemplates.CrescentId };
+
         [Test]
         public void Timing_BothSides_StrikesMeetOnTheLaterOne_TurnCoversBothClips()
         {
-            TechniqueClip maehwa = Clip(ShapeTemplates.FlowerId);    // strike 0.4 s
-            TechniqueClip wolyeong = Clip(ShapeTemplates.CrescentId); // strike 1.833 s
-            ReplayTurnTiming t = ReplayTurnTiming.For(maehwa, wolyeong);
-            Assert.AreEqual(wolyeong.Strike, t.Impact, Eps);
-            Assert.AreEqual(wolyeong.Strike - maehwa.Strike, t.StartDelayA, Eps);
-            Assert.AreEqual(0f, t.StartDelayB, Eps);
-            float end = Mathf.Max(t.StartDelayA + maehwa.Length, t.StartDelayB + wolyeong.Length);
-            Assert.AreEqual(end + 0.4f, t.Interval, Eps);
+            foreach (string idA in AllIds)
+            foreach (string idB in AllIds)
+            {
+                TechniqueClip a = Clip(idA);
+                TechniqueClip b = Clip(idB);
+                ReplayTurnTiming t = ReplayTurnTiming.For(a, b);
+                Assert.AreEqual(Mathf.Max(a.Strike, b.Strike), t.Impact, Eps, $"{idA} vs {idB}");
+                Assert.AreEqual(t.Impact, t.StartDelayA + a.Strike, Eps);
+                Assert.AreEqual(t.Impact, t.StartDelayB + b.Strike, Eps);
+                Assert.IsTrue(t.StartDelayA < Eps || t.StartDelayB < Eps, "the later strike's side starts at once");
+                float end = Mathf.Max(t.StartDelayA + a.Length, t.StartDelayB + b.Length);
+                Assert.AreEqual(end + 0.4f, t.Interval, Eps);
+            }
+        }
+
+        // Every technique turn, one side or both, fits in MaxTurnSeconds with the current cuts.
+        [Test]
+        public void Timing_EveryTechniqueTurnFitsTheCap()
+        {
+            foreach (string idA in AllIds)
+            {
+                Assert.That(ReplayTurnTiming.For(Clip(idA), null).Interval, Is.LessThanOrEqualTo(TechniqueClipCatalog.MaxTurnSeconds), idA);
+                Assert.That(ReplayTurnTiming.For(null, Clip(idA)).Interval, Is.LessThanOrEqualTo(TechniqueClipCatalog.MaxTurnSeconds), idA);
+                foreach (string idB in AllIds)
+                    Assert.That(ReplayTurnTiming.For(Clip(idA), Clip(idB)).Interval, Is.LessThanOrEqualTo(TechniqueClipCatalog.MaxTurnSeconds), $"{idA} vs {idB}");
+            }
         }
     }
 }
