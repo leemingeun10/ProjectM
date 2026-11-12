@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Game.Client.Cultivation;
@@ -16,13 +17,15 @@ namespace Game.Client.Technique
     // player presses the save-turn button, using the counter toggle state at that moment.
     // Saved turns are listed with a delete button each.
     //
-    // Cultivation: 외공 sets the stroke length cap. When a turn is saved, its drawn shape is matched
-    // against the active hidden-technique templates (ShapeTemplates.Active); a match is activated if
-    // the sequence still has the 내공 for it (HiddenTechniques costs). 내공 here is a per-sequence
-    // budget (the trained InternalPower, minus what this sequence's activated turns cost; deleting
-    // such a turn refunds it), never written back to the save. Activation is only logged and tagged
-    // on the turn row for now: the turn is saved as an ordinary one, because choosing the hidden
-    // move (TechniqueBuilder's hidden TryAddStep) has no UI yet.
+    // Cultivation: 외공 sets the stroke length cap; the trained 내공 is the builder's per-sequence
+    // budget for hidden techniques (TechniqueBuilder.InternalPower), never written back to the save.
+    //
+    // Hidden techniques: when a pending stroke (counter off) is recognised as an active technique's
+    // shape and the remaining 내공 can pay for it, the choice panel offers its moves. While it is
+    // open, saving waits for a move; the chosen move is saved with the step (TechniqueBuilder's
+    // hidden TryAddStep) and previewed with its qi. Cancelling, drawing again or turning counter on
+    // closes the panel and the stroke is saved as an ordinary turn. Loaded steps keep their saved
+    // hidden fields as they are; nothing is recognised again.
     public class TechniqueSequenceController : MonoBehaviour
     {
         [SerializeField] private StrokeInputController strokeInput;
@@ -35,6 +38,7 @@ namespace Game.Client.Technique
         [SerializeField] private RectTransform turnListContainer;
         // Inactive template cloned once per possible turn; needs a "Label" Text child and a Button child.
         [SerializeField] private RectTransform turnRowTemplate;
+        [SerializeField] private HiddenTechniqueChoicePanel hiddenChoicePanel;
 
         private readonly TechniqueBuilder builder = new TechniqueBuilder();
         private readonly List<Text> turnRowLabels = new List<Text>();
@@ -44,14 +48,12 @@ namespace Game.Client.Technique
         private StrokeResult pendingStroke;
         private IReadOnlyList<StrokePoint> pendingPoints;
         private IReadOnlyList<ShapePoint> pendingShape;
+        // Hidden technique the choice panel is offering for the pending stroke, or null.
+        private string offeredHiddenId;
 
-        private CultivationStats cultivation;
-        // Hidden technique template id activated by each saved turn (null = ordinary turn),
-        // kept index-aligned with builder.Steps.
-        private readonly List<string> hiddenByTurn = new List<string>();
-        // Shape scores of the pending stroke, shown in its preview so the player sees how close it was.
+        // Shape score of the pending stroke, shown in its preview so the player sees how close it was.
         private string pendingShapeSummary;
-        // Outcome of the last save (hidden technique activated or not), shown until the next stroke.
+        // Outcome of the last save, shown until the next stroke.
         private string notice;
 
         public TechniqueBuilder Builder => builder;
@@ -59,9 +61,15 @@ namespace Game.Client.Technique
         // Live counter toggle state, read by the drawing preview when a stroke completes.
         public bool IsCounterOn => counterToggle.isOn;
 
+        // A move was picked for the pending stroke's hidden technique (id, move, points), for the preview.
+        public event Action<string, HiddenTechniqueMove, IReadOnlyList<StrokePoint>> HiddenMoveChosen;
+
+        private bool IsChoosingHidden => offeredHiddenId != null && hiddenChoicePanel.IsOpen;
+
         private void Awake()
         {
             turnRowTemplate.gameObject.SetActive(false);
+            hiddenChoicePanel.Close();
             for (int i = 0; i < TechniqueBuilder.MaxTurns; i++)
             {
                 RectTransform row = Instantiate(turnRowTemplate, turnListContainer);
@@ -78,6 +86,9 @@ namespace Game.Client.Technique
             strokeInput.StrokeCompleted += OnStrokeCompleted;
             resetButton.onClick.AddListener(ClearPending);
             saveTurnButton.onClick.AddListener(SavePendingTurn);
+            counterToggle.onValueChanged.AddListener(OnCounterToggled);
+            hiddenChoicePanel.MoveChosen += OnHiddenMoveChosen;
+            hiddenChoicePanel.Cancelled += OnHiddenCancelled;
             // This object stays enabled across screens, so later 단련 training arrives via Saved.
             CultivationStore.Saved += ApplyCultivation;
             ApplyCultivation(CultivationStore.Load());
@@ -88,12 +99,14 @@ namespace Game.Client.Technique
             strokeInput.StrokeCompleted -= OnStrokeCompleted;
             resetButton.onClick.RemoveListener(ClearPending);
             saveTurnButton.onClick.RemoveListener(SavePendingTurn);
+            counterToggle.onValueChanged.RemoveListener(OnCounterToggled);
+            hiddenChoicePanel.MoveChosen -= OnHiddenMoveChosen;
+            hiddenChoicePanel.Cancelled -= OnHiddenCancelled;
             CultivationStore.Saved -= ApplyCultivation;
         }
 
         private void ApplyCultivation(CultivationStats stats)
         {
-            cultivation = stats;
             strokeInput.MaxStrokeLengthCm = CultivationBattleRules.MaxStrokeLength(stats.ExternalPower);
             builder.InternalPower = stats.InternalPower;
             UpdateUi();
@@ -104,47 +117,95 @@ namespace Game.Client.Technique
         public void ResetSequence()
         {
             builder.Reset();
-            hiddenByTurn.Clear();
             DiscardPending();
             counterToggle.isOn = false;
+            notice = null;
             UpdateUi();
             Debug.Log("[Technique] 시퀀스 초기화됨");
         }
 
         // Replaces the current sequence with saved steps, replayed through TryAddStep so the
-        // counter budget is rebuilt the same way as when they were drawn. Hidden techniques are not
-        // saved, so each loaded turn's stored points are recognised again, spending 내공 in order.
+        // counter and 내공 budgets are rebuilt the same way as when they were drawn. Hidden steps
+        // keep their saved technique and move.
         public void LoadSteps(IReadOnlyList<TechniqueStep> steps)
         {
             builder.Reset();
-            hiddenByTurn.Clear();
             DiscardPending();
             counterToggle.isOn = false;
             foreach (TechniqueStep step in steps)
             {
-                if (builder.TryAddStep(step.IsCounter, step.Stroke, step.RawPoints, step.HiddenTechniqueId, step.HiddenMove) != TechniqueAddResult.Success)
+                TechniqueAddResult result = builder.TryAddStep(step.IsCounter, step.Stroke, step.RawPoints, step.HiddenTechniqueId, step.HiddenMove);
+                if (result != TechniqueAddResult.Success)
                 {
-                    Debug.LogWarning($"[Technique] 저장된 스텝 {step.TurnIndex + 1}을 복원하지 못해 이후 스텝은 무시됩니다.");
+                    Debug.LogWarning($"[Technique] 저장된 스텝 {step.TurnIndex + 1}을 복원하지 못해 ({result}) 이후 스텝은 무시됩니다.");
                     break;
                 }
-                pendingShape = ToShapePoints(step.RawPoints);
-                hiddenByTurn.Add(TryActivateHidden(step.TurnIndex + 1));
             }
-            pendingShape = null;
             notice = null;
             UpdateUi();
         }
 
-        // A new stroke replaces any pending one; nothing is added to the builder yet.
+        // A new stroke replaces any pending one (closing a choice it had); nothing is added to the builder yet.
         private void OnStrokeCompleted(StrokeResult stroke, IReadOnlyList<StrokePoint> rawPoints)
         {
+            CloseHiddenChoice();
             hasPending = true;
             pendingStroke = stroke;
             pendingPoints = rawPoints;
             pendingShape = strokeInput.LastShapePoints;
             pendingShapeSummary = DescribeShape();
             notice = null;
+            OfferHiddenChoice();
             UpdateUi();
+        }
+
+        // Opens the choice panel when the pending stroke can become a hidden turn: counter off,
+        // room left, an active technique's shape and enough remaining 내공.
+        private void OfferHiddenChoice()
+        {
+            if (counterToggle.isOn || builder.IsFull)
+                return;
+            ShapeMatchResult? match = ShapeRecognizer.Recognize(pendingShape, ShapeTemplates.Active, ShapeRecognizer.DefaultThreshold);
+            if (match == null || !HiddenTechniques.TryGetActive(match.Value.TemplateId, out HiddenTechniqueDefinition hidden))
+                return;
+            if (builder.RemainingInternalPower < hidden.InternalPowerCost)
+            {
+                notice = $"[{HiddenTechniqueNames.Of(hidden.Id)}] 내공 부족 ({builder.RemainingInternalPower}/{hidden.InternalPowerCost}) → 일반 선";
+                return;
+            }
+
+            offeredHiddenId = hidden.Id;
+            hiddenChoicePanel.Open(hidden.Id, hidden.InternalPowerCost, builder.RemainingInternalPower);
+            Debug.Log($"[Hidden] [{HiddenTechniqueNames.Of(hidden.Id)}] 인식 (점수 {match.Value.Score}): 동작 선택 대기");
+        }
+
+        private void CloseHiddenChoice()
+        {
+            offeredHiddenId = null;
+            hiddenChoicePanel.Close();
+        }
+
+        private void OnHiddenMoveChosen(HiddenTechniqueMove move)
+        {
+            if (offeredHiddenId == null || !hasPending)
+                return;
+            HiddenMoveChosen?.Invoke(offeredHiddenId, move, pendingPoints);
+            UpdateUi();
+        }
+
+        private void OnHiddenCancelled()
+        {
+            offeredHiddenId = null;
+            UpdateUi();
+        }
+
+        private void OnCounterToggled(bool on)
+        {
+            if (on && offeredHiddenId != null)
+            {
+                CloseHiddenChoice();
+                UpdateUi();
+            }
         }
 
         private void ClearPending()
@@ -158,6 +219,7 @@ namespace Game.Client.Technique
 
         private void DiscardPending()
         {
+            CloseHiddenChoice();
             hasPending = false;
             pendingPoints = null;
             pendingShape = null;
@@ -168,14 +230,35 @@ namespace Game.Client.Technique
         {
             if (!hasPending)
                 return;
+            // Saving waits for a move while the choice is open (the button is disabled too).
+            if (IsChoosingHidden && hiddenChoicePanel.Selected == HiddenTechniqueMove.None)
+                return;
 
             bool isCounter = counterToggle.isOn;
-            TechniqueAddResult addResult = builder.TryAddStep(isCounter, pendingStroke, pendingPoints);
+            TechniqueAddResult addResult;
+            if (IsChoosingHidden)
+            {
+                addResult = builder.TryAddStep(isCounter, pendingStroke, pendingPoints, offeredHiddenId, hiddenChoicePanel.Selected);
+                if (IsHiddenRefusal(addResult))
+                {
+                    // Save the shape as an ordinary turn instead and say why.
+                    Debug.Log($"[Hidden] [{HiddenTechniqueNames.Of(offeredHiddenId)}] 저장 거부 ({addResult}) → 일반 턴으로 저장");
+                    notice = $"[{HiddenTechniqueNames.Of(offeredHiddenId)}] {DescribeRefusal(addResult)} → 일반 선으로 저장";
+                    addResult = builder.TryAddStep(isCounter, pendingStroke, pendingPoints);
+                }
+            }
+            else
+            {
+                addResult = builder.TryAddStep(isCounter, pendingStroke, pendingPoints);
+            }
+
             switch (addResult)
             {
                 case TechniqueAddResult.Success:
-                    hiddenByTurn.Add(TryActivateHidden(builder.TurnCount));
-                    LogStepSummary(builder.Steps[builder.TurnCount - 1]);
+                    TechniqueStep saved = builder.Steps[builder.TurnCount - 1];
+                    if (saved.IsHidden)
+                        notice = $"턴 {saved.TurnIndex + 1}: [{HiddenTechniqueNames.OfStep(saved)}] 저장 · 남은 내공 {builder.RemainingInternalPower}";
+                    LogStepSummary(saved);
                     if (builder.IsFull)
                         LogSequenceComplete();
                     DiscardPending();
@@ -192,45 +275,25 @@ namespace Game.Client.Technique
             UpdateUi();
         }
 
+        private static bool IsHiddenRefusal(TechniqueAddResult result)
+            => result == TechniqueAddResult.NotEnoughInternalPower
+               || result == TechniqueAddResult.UnknownHiddenTechnique
+               || result == TechniqueAddResult.HiddenTechniqueMoveMismatch
+               || result == TechniqueAddResult.HiddenTechniqueOnCounter;
+
+        private static string DescribeRefusal(TechniqueAddResult result)
+            => result == TechniqueAddResult.NotEnoughInternalPower ? "내공 부족" : "사용할 수 없음";
+
         private void RemoveTurn(int turnIndex)
         {
             if (!builder.RemoveAt(turnIndex))
                 return;
-            hiddenByTurn.RemoveAt(turnIndex);
             Debug.Log($"[Technique] 턴 {turnIndex + 1} 삭제");
             UpdateUi();
         }
 
-        // Template id of the hidden technique the pending shape activates as turn `turnNumber`, or
-        // null when it matches nothing or the sequence lacks the 내공 (then it is an ordinary turn).
-        private string TryActivateHidden(int turnNumber)
-        {
-            ShapeMatchResult? match = ShapeRecognizer.Recognize(pendingShape, ShapeTemplates.Active, ShapeRecognizer.DefaultThreshold);
-            if (match == null || !HiddenTechniques.TryGetActive(match.Value.TemplateId, out HiddenTechniqueDefinition hidden))
-            {
-                notice = $"턴 {turnNumber}: 일반 공격으로 저장 (무공 모양 아님)";
-                return null;
-            }
-
-            string name = HiddenTechniqueNames.Of(match.Value.TemplateId);
-            int before = RemainingInternalPower();
-            if (before < hidden.InternalPowerCost)
-            {
-                Debug.Log($"[Hidden] 턴 {turnNumber}: [{name}] 모양이지만 내공이 부족해 일반 공격으로 처리합니다 (점수 {match.Value.Score}, 내공 {before}).");
-                notice = $"턴 {turnNumber}: [{name}] 내공 부족 ({before}/{hidden.InternalPowerCost}) → 일반 공격";
-                return null;
-            }
-
-            int remaining = before - hidden.InternalPowerCost;
-
-            Debug.Log($"[Hidden] 턴 {turnNumber}: [{name}] 인식됨! (점수 {match.Value.Score}, 내공 {before} → {remaining})");
-            notice = $"턴 {turnNumber}: [{name}] 인식됨!  내공 {before} → {remaining}";
-            return match.Value.TemplateId;
-        }
-
-        // Each hidden technique's score for the pending shape (the best of its template variants;
-        // ShapeRecognizer.DefaultThreshold activates), e.g. "삼재검법 9420" when one passes or
-        // "무공 모양 아님 (가장 가까움: 매화 8700)". The console log lists every score.
+        // The active techniques' best score for the pending shape (ShapeRecognizer.DefaultThreshold
+        // passes), e.g. "삼재검법 9420", or "무공 모양 아님 (가장 가까움: 삼재 8700)".
         private string DescribeShape()
         {
             var scores = new StringBuilder();
@@ -270,60 +333,43 @@ namespace Game.Client.Technique
             return (passed != null ? $"{passed} {passedScore}" : $"무공 모양 아님 (가장 가까움: {closest.Substring(0, 2)} {closestScore})") + cut;
         }
 
-        // Saved points are the 24-point resampled stroke (frame cm as Fixed raw = cm * 1000), the
-        // same scale as StrokeInputController.LastShapePoints.
-        private static ShapePoint[] ToShapePoints(IReadOnlyList<StrokePoint> points)
-        {
-            var shape = new ShapePoint[points.Count];
-            for (int i = 0; i < points.Count; i++)
-                shape[i] = new ShapePoint((int)points[i].X.Raw, (int)points[i].Y.Raw);
-            return shape;
-        }
-
-        // The trained 내공 minus what this sequence's activated turns already cost.
-        private int RemainingInternalPower()
-        {
-            int remaining = cultivation.InternalPower;
-            foreach (string templateId in hiddenByTurn)
-            {
-                if (templateId != null && HiddenTechniques.TryGetActive(templateId, out HiddenTechniqueDefinition hidden))
-                    remaining -= hidden.InternalPowerCost;
-            }
-            return remaining;
-        }
-
         private void UpdateUi()
         {
             statusText.text = $"턴 {builder.TurnCount} / {TechniqueBuilder.MaxTurns}\n카운터 남음: {builder.RemainingCounters}";
             // Leave an already-on toggle switchable off even when no counters remain.
             counterToggle.interactable = counterToggle.isOn || (builder.RemainingCounters > 0 && !builder.IsFull);
             resetButton.interactable = hasPending;
-            saveTurnButton.interactable = hasPending && !builder.IsFull;
+            bool waitingForMove = IsChoosingHidden && hiddenChoicePanel.Selected == HiddenTechniqueMove.None;
+            saveTurnButton.interactable = hasPending && !builder.IsFull && !waitingForMove;
 
+            string chosen = IsChoosingHidden && hiddenChoicePanel.Selected != HiddenTechniqueMove.None
+                ? $" · {HiddenTechniqueNames.Of(offeredHiddenId)}·{HiddenTechniqueNames.MoveName(hiddenChoicePanel.Selected)}"
+                : waitingForMove ? " · 동작을 고르세요" : "";
             // The status box only fits two lines, so the cultivation numbers ride on this bar.
             pendingText.text = !hasPending
-                ? (notice ?? "틀 안에 선을 그리세요") + $"  ·  한도 {strokeInput.MaxStrokeLengthCm}cm · 내공 {RemainingInternalPower()}"
+                ? (notice ?? "틀 안에 선을 그리세요") + $"  ·  한도 {strokeInput.MaxStrokeLengthCm}cm · 내공 {builder.RemainingInternalPower}"
                 : builder.IsFull ? $"{FormatStroke(pendingStroke)} · {pendingShapeSummary} (10턴 가득 참)"
-                : $"{FormatStroke(pendingStroke)} · {pendingShapeSummary}";
+                : $"{(notice != null ? notice + " · " : "")}{FormatStroke(pendingStroke)} · {pendingShapeSummary}{chosen}";
 
             for (int i = 0; i < turnRows.Count; i++)
             {
                 bool used = i < builder.TurnCount;
                 turnRows[i].SetActive(used);
                 if (used)
-                    turnRowLabels[i].text = FormatTurn(builder.Steps[i], hiddenByTurn[i]);
+                    turnRowLabels[i].text = FormatTurn(builder.Steps[i]);
             }
         }
 
-        private static string FormatTurn(TechniqueStep step, string hiddenTemplateId)
-            // The hidden technique goes first: long labels run under the row's delete button.
-            => $"턴 {step.TurnIndex + 1}  "
-               + (hiddenTemplateId != null ? $"[{HiddenTechniqueNames.Of(hiddenTemplateId)}] " : "")
-               + $"{(step.IsCounter ? "Counter · " : "")}{FormatStroke(step.Stroke)}";
+        // A hidden turn shows only its technique and move: the stroke behind it no longer decides
+        // how it fights, and long labels would run under the row's delete button.
+        private static string FormatTurn(TechniqueStep step)
+            => step.IsHidden
+                ? $"턴 {step.TurnIndex + 1}  {HiddenTechniqueNames.OfStep(step)}"
+                : $"턴 {step.TurnIndex + 1}  {(step.IsCounter ? "Counter · " : "")}{FormatStroke(step.Stroke)}";
 
         private static void LogStepSummary(TechniqueStep step)
         {
-            Debug.Log($"[Technique] 턴 {step.TurnIndex + 1} - Counter:{step.IsCounter} {FormatStroke(step.Stroke)}");
+            Debug.Log($"[Technique] 턴 {step.TurnIndex + 1} - Counter:{step.IsCounter} {FormatStroke(step.Stroke)}{(step.IsHidden ? " " + HiddenTechniqueNames.OfStep(step) : "")}");
         }
 
         private void LogSequenceComplete()
@@ -331,7 +377,7 @@ namespace Game.Client.Technique
             var sb = new StringBuilder();
             sb.AppendLine("시퀀스 완성");
             foreach (TechniqueStep step in builder.Steps)
-                sb.AppendLine($"턴 {step.TurnIndex + 1}: Counter={step.IsCounter} {FormatStroke(step.Stroke)}");
+                sb.AppendLine($"턴 {step.TurnIndex + 1}: Counter={step.IsCounter} {FormatStroke(step.Stroke)}{(step.IsHidden ? " " + HiddenTechniqueNames.OfStep(step) : "")}");
 
             Debug.Log(sb.ToString());
         }

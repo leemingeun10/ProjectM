@@ -9,6 +9,9 @@ namespace Game.Client.Battle
     //
     // Wait time is accumulated as deltaTime * animator.speed, so PlaybackSpeed (including 0 for
     // pause) scales both the clip and the wait before returning to Idle.
+    //
+    // PlayTurn with a hidden technique id also streams that technique's qi off the sword tip
+    // (SwordQiEffect) while the clip plays, fading it out as the character returns to Idle.
     [RequireComponent(typeof(Animator))]
     public class CharacterMotionPlayer : MonoBehaviour
     {
@@ -28,6 +31,7 @@ namespace Game.Client.Battle
         private const float HitLeanDuration = 0.15f;
 
         private Animator animator;
+        private SwordQiEffect qi;
         private Coroutine playRoutine;
         private Coroutine hitRoutine;
         private Quaternion baseRotation;
@@ -44,6 +48,8 @@ namespace Game.Client.Battle
         {
             animator = GetComponent<Animator>();
             baseRotation = transform.localRotation;
+            if (swordTrail != null)
+                qi = SwordQiEffect.Create(swordTrail.transform, swordTrail);
             SetTrail(false);
         }
 
@@ -87,9 +93,18 @@ namespace Game.Client.Battle
 
         public void Play(params string[] states)
         {
+            qi?.Stop();
             if (playRoutine != null)
                 StopCoroutine(playRoutine);
             playRoutine = StartCoroutine(PlayThenIdle(states));
+        }
+
+        // One turn's clip; hiddenTechniqueId (null for an ordinary turn) adds that technique's qi.
+        public void PlayTurn(string state, string hiddenTechniqueId)
+        {
+            Play(state);
+            if (qi != null && HiddenTechniqueQiColors.TryGet(hiddenTechniqueId, out Color color))
+                qi.Begin(color);
         }
 
         public void StopToIdle()
@@ -102,6 +117,7 @@ namespace Game.Client.Battle
 
             animator.Play(IdleState, 0, 0f);
             SetTrail(false);
+            qi?.Stop();
 
             if (hitRoutine != null)
             {
@@ -129,6 +145,7 @@ namespace Game.Client.Battle
 
             animator.CrossFadeInFixedTime(IdleState, CrossFadeSeconds, 0, 0f);
             SetTrail(false);
+            qi?.End();
             playRoutine = null;
         }
 

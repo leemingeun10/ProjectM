@@ -3,6 +3,7 @@ using Game.Client.Stroke;
 using Game.Client.Technique;
 using Game.Sim.Battle;
 using Game.Sim.Stroke;
+using Game.Sim.Technique;
 using UnityEngine;
 
 namespace Game.Client.Battle
@@ -12,6 +13,8 @@ namespace Game.Client.Battle
     //
     // When the counter toggle is on, plays the counter move (as if it landed). This is only a
     // preview of the motion for a stroke drawn in counter mode, NOT a counter success/failure judgement.
+    // Picking a hidden technique's move for the pending stroke plays that move's clip with the
+    // technique's qi, as the replay will.
     // Battle playback is driven separately by BattleReplayController.
     public class StrokeAnimationPlayer : MonoBehaviour
     {
@@ -38,11 +41,13 @@ namespace Game.Client.Battle
         private void OnEnable()
         {
             strokeInput.StrokeCompleted += OnStrokeCompleted;
+            sequenceController.HiddenMoveChosen += OnHiddenMoveChosen;
         }
 
         private void OnDisable()
         {
             strokeInput.StrokeCompleted -= OnStrokeCompleted;
+            sequenceController.HiddenMoveChosen -= OnHiddenMoveChosen;
         }
 
         private void OnStrokeCompleted(StrokeResult result, IReadOnlyList<StrokePoint> points)
@@ -51,6 +56,12 @@ namespace Game.Client.Battle
             BattleStepType type = sequenceController.IsCounterOn ? BattleStepType.Counter
                 : result.Type == StrokeType.Thrust ? BattleStepType.Thrust : BattleStepType.Slash;
             motionPlayer.Play(CombatClipSelector.StateFor(type, points, counterLanded: true));
+        }
+
+        private void OnHiddenMoveChosen(string hiddenTechniqueId, HiddenTechniqueMove move, IReadOnlyList<StrokePoint> points)
+        {
+            BattleStepType type = move == HiddenTechniqueMove.Thrust ? BattleStepType.Thrust : BattleStepType.Slash;
+            motionPlayer.PlayTurn(CombatClipSelector.StateFor(type, points, counterLanded: true, move), hiddenTechniqueId);
         }
     }
 }

@@ -219,11 +219,15 @@ namespace Game.Client.Battle
                 strokeComparison.Show(StepAt(currentStepsA, e.TurnIndex), StepAt(currentStepsB, e.TurnIndex), e.TypeA, e.TypeB);
                 strokeComparison.SetReveal(0f);
 
-                TechniqueClip? clipA = TechniqueClipCatalog.For(TechniqueCast.Find(CastsFor(true), e.TurnIndex));
-                TechniqueClip? clipB = TechniqueClipCatalog.For(TechniqueCast.Find(CastsFor(false), e.TurnIndex));
+                TechniqueClip? clipA = TechniqueClipCatalog.For(TechniqueCast.Find(currentCastsA, e.TurnIndex));
+                TechniqueClip? clipB = TechniqueClipCatalog.For(TechniqueCast.Find(currentCastsB, e.TurnIndex));
                 ReplayTurnTiming timing = ReplayTurnTiming.For(clipA, clipB);
-                string stateA = clipA?.State ?? CombatClipSelector.StateForTurn(e, true, StepAt(currentStepsA, e.TurnIndex)?.RawPoints);
-                string stateB = clipB?.State ?? CombatClipSelector.StateForTurn(e, false, StepAt(currentStepsB, e.TurnIndex)?.RawPoints);
+                TechniqueStep? stepA = StepAt(currentStepsA, e.TurnIndex);
+                TechniqueStep? stepB = StepAt(currentStepsB, e.TurnIndex);
+                // A hidden-technique step (삼재검법) plays its chosen move's clip with its qi, on the
+                // normal turn timing.
+                string stateA = clipA?.State ?? CombatClipSelector.StateForTurn(e, true, stepA);
+                string stateB = clipB?.State ?? CombatClipSelector.StateForTurn(e, false, stepB);
                 bool startedA = false;
                 bool startedB = false;
                 LogTurnTiming(e.TurnIndex, timing, stateA, stateB);
@@ -248,13 +252,13 @@ namespace Game.Client.Battle
                     if (!startedA && turnTime >= timing.StartDelayA)
                     {
                         startedA = true;
-                        characterA.Play(stateA);
+                        characterA.PlayTurn(stateA, stepA?.HiddenTechniqueId);
                     }
 
                     if (!startedB && turnTime >= timing.StartDelayB)
                     {
                         startedB = true;
-                        characterB.Play(stateB);
+                        characterB.PlayTurn(stateB, stepB?.HiddenTechniqueId);
                     }
 
                     // The previews finish drawing as the blades meet.
@@ -306,30 +310,6 @@ namespace Game.Client.Battle
             Action callback = pendingOnFinished;
             pendingOnFinished = null;
             callback?.Invoke();
-        }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        // For TechniquePreviewTool only.
-        internal CharacterMotionPlayer PreviewCharacter(bool sideA) => sideA ? characterA : characterB;
-
-        internal bool PreviewRestart()
-        {
-            if (currentResult == null || !replayPanel.activeSelf)
-                return false;
-            Restart();
-            return true;
-        }
-#endif
-
-        private IReadOnlyList<TechniqueCast> CastsFor(bool sideA)
-        {
-            IReadOnlyList<TechniqueCast> casts = sideA ? currentCastsA : currentCastsB;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            // Casts injected from the preview tool stand in until recognition and AI settings supply real ones.
-            if (casts == null || casts.Count == 0)
-                casts = TechniquePreviewTool.InjectedCasts(sideA);
-#endif
-            return casts;
         }
 
         // Editor/dev-build log for checking technique turns; normal turns log nothing.

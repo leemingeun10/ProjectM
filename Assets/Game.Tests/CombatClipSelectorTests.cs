@@ -1,6 +1,7 @@
 using Game.Client.Battle;
 using Game.Sim.Battle;
 using Game.Sim.Stroke;
+using Game.Sim.Technique;
 using NUnit.Framework;
 
 namespace Game.Tests
@@ -56,6 +57,9 @@ namespace Game.Tests
         [TearDown]
         public void RestoreFallback() => CombatClipSelector.UseLegacySlashFallback = savedFallback;
 
+        private static TechniqueStep Step(StrokePoint[] stroke, string hiddenId = null, HiddenTechniqueMove move = HiddenTechniqueMove.None)
+            => new TechniqueStep(0, false, StrokeAnalyzer.Analyze(stroke), stroke, hiddenId, move);
+
         private static string Slash(StrokePoint[] stroke) => CombatClipSelector.StateFor(BattleStepType.Slash, stroke, false);
 
         private static readonly StrokePoint[] RightToLeft = Stroke(3, 0, -3, 0);
@@ -68,13 +72,14 @@ namespace Game.Tests
             => Assert.IsFalse(CombatClipSelector.UseLegacySlashFallback);
 
         [Test]
-        public void StateFor_EachSlashDirectionHasItsClip()
+        public void StateFor_EachSlashDirectionHasItsClip_VerticalIsAlwaysTheDownwardCut()
         {
             CombatClipSelector.UseLegacySlashFallback = false;
             Assert.AreEqual(CombatClipSelector.SlashLeftToRightState, Slash(Stroke(-3, 0, 3, 0)));
             Assert.AreEqual(CombatClipSelector.SlashRightToLeftState, Slash(RightToLeft));
-            Assert.AreEqual(CombatClipSelector.SlashTopToBottomState, Slash(TopToBottom));
-            Assert.AreEqual(CombatClipSelector.SlashBottomToTopState, Slash(BottomToTop));
+            Assert.AreEqual("Combat_SlashDown", Slash(TopToBottom));
+            // Drawn upwards, it still plays the downward cut: no rising clip is used.
+            Assert.AreEqual("Combat_SlashDown", Slash(BottomToTop));
         }
 
         [Test]
@@ -82,8 +87,8 @@ namespace Game.Tests
         {
             CombatClipSelector.UseLegacySlashFallback = false;
             Assert.AreEqual(CombatClipSelector.SlashRightToLeftState, Slash(Stroke(4, 1, -4, -2)));   // mostly leftward
-            Assert.AreEqual(CombatClipSelector.SlashTopToBottomState, Slash(Stroke(1, 4, -2, -4)));   // mostly downward
-            Assert.AreEqual(CombatClipSelector.SlashBottomToTopState, Slash(Stroke(-1, -4, 2, 4)));   // mostly upward
+            Assert.AreEqual(CombatClipSelector.SlashVerticalState, Slash(Stroke(1, 4, -2, -4)));   // mostly downward
+            Assert.AreEqual(CombatClipSelector.SlashVerticalState, Slash(Stroke(-1, -4, 2, 4)));   // mostly upward
             Assert.AreEqual(CombatClipSelector.SlashLeftToRightState, Slash(Stroke(0, 0, 3, -3)));    // exact 45° is horizontal
             Assert.AreEqual(CombatClipSelector.SlashLeftToRightState, Slash(Stroke(2, 2, 2, 2)));     // no displacement
         }
@@ -115,13 +120,43 @@ namespace Game.Tests
             var vsThrust = new TurnEvent(0, BattleStepType.Thrust, BattleStepType.Counter, 0, 6, TurnReason.Unconditional, 100, 94);
             var bothCounter = new TurnEvent(0, BattleStepType.Counter, BattleStepType.Counter, 0, 0, TurnReason.Unconditional, 100, 100);
 
-            Assert.AreEqual(CombatClipSelector.CounterState, CombatClipSelector.StateForTurn(landed, true, RightToLeft));
-            Assert.AreEqual(CombatClipSelector.SlashRightToLeftState, CombatClipSelector.StateForTurn(landed, false, RightToLeft));
-            Assert.AreEqual(CharacterMotionPlayer.GuardState, CombatClipSelector.StateForTurn(missed, true, RightToLeft));
-            Assert.AreEqual(CharacterMotionPlayer.GuardState, CombatClipSelector.StateForTurn(vsThrust, false, RightToLeft));
-            Assert.AreEqual(CombatClipSelector.ThrustState, CombatClipSelector.StateForTurn(vsThrust, true, RightToLeft));
-            Assert.AreEqual(CharacterMotionPlayer.GuardState, CombatClipSelector.StateForTurn(bothCounter, true, RightToLeft));
-            Assert.AreEqual(CharacterMotionPlayer.GuardState, CombatClipSelector.StateForTurn(bothCounter, false, RightToLeft));
+            Assert.AreEqual(CombatClipSelector.CounterState, CombatClipSelector.StateForTurn(landed, true, Step(RightToLeft)));
+            Assert.AreEqual(CombatClipSelector.SlashRightToLeftState, CombatClipSelector.StateForTurn(landed, false, Step(RightToLeft)));
+            Assert.AreEqual(CharacterMotionPlayer.GuardState, CombatClipSelector.StateForTurn(missed, true, Step(RightToLeft)));
+            Assert.AreEqual(CharacterMotionPlayer.GuardState, CombatClipSelector.StateForTurn(vsThrust, false, Step(RightToLeft)));
+            Assert.AreEqual(CombatClipSelector.ThrustState, CombatClipSelector.StateForTurn(vsThrust, true, Step(RightToLeft)));
+            Assert.AreEqual(CharacterMotionPlayer.GuardState, CombatClipSelector.StateForTurn(bothCounter, true, Step(RightToLeft)));
+            Assert.AreEqual(CharacterMotionPlayer.GuardState, CombatClipSelector.StateForTurn(bothCounter, false, Step(RightToLeft)));
+        }
+
+        // 삼재: the chosen move picks the clip, whatever the drawn shape or its direction.
+        [TestCase(HiddenTechniqueMove.HorizontalSlash, "Combat_SlashLR")]
+        [TestCase(HiddenTechniqueMove.VerticalSlash, "Combat_SlashDown")]
+        [TestCase(HiddenTechniqueMove.Thrust, "Combat_Thrust")]
+        public void HiddenMove_PicksItsClip(HiddenTechniqueMove move, string state)
+        {
+            foreach (bool fallback in new[] { false, true })
+            {
+                CombatClipSelector.UseLegacySlashFallback = fallback;
+                BattleStepType type = move == HiddenTechniqueMove.Thrust ? BattleStepType.Thrust : BattleStepType.Slash;
+                foreach (StrokePoint[] stroke in new[] { RightToLeft, TopToBottom, BottomToTop, Triangle })
+                {
+                    Assert.AreEqual(state, CombatClipSelector.StateFor(type, stroke, false, move));
+                    var e = new TurnEvent(0, type, BattleStepType.Counter, 0, 10, TurnReason.Unconditional, 100, 90);
+                    Assert.AreEqual(state, CombatClipSelector.StateForTurn(e, true, Step(stroke, "triangle", move)));
+                }
+            }
+        }
+
+        private static readonly StrokePoint[] Triangle =
+            { StrokePoint.FromInt(0, 0), StrokePoint.FromInt(400, 0), StrokePoint.FromInt(0, 360), StrokePoint.FromInt(0, 0) };
+
+        [Test]
+        public void StateForTurn_WithoutAStep_UsesTheTurnTypeAlone()
+        {
+            var e = new TurnEvent(0, BattleStepType.Slash, BattleStepType.Thrust, 0, 10, TurnReason.Miss, 100, 90);
+            Assert.AreEqual(CombatClipSelector.SlashLeftToRightState, CombatClipSelector.StateForTurn(e, true, null));
+            Assert.AreEqual(CombatClipSelector.ThrustState, CombatClipSelector.StateForTurn(e, false, null));
         }
     }
 }

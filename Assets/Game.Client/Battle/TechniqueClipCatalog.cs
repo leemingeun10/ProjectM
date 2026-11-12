@@ -1,5 +1,3 @@
-using Game.Sim.Shape;
-
 namespace Game.Client.Battle
 {
     // A technique's Animator state with its clip length and main strike, both in seconds of clip time.
@@ -19,38 +17,20 @@ namespace Game.Client.Battle
         }
     }
 
-    // Technique id + stage -> clip. Lengths and strikes are measured from the cut clips in
-    // CharacterArt/Combat (an EditMode test checks the lengths against the assets); recutting a clip
-    // means updating its entry here. Clips are cut so a technique turn (clip + tail, see
-    // ReplayTurnTiming) stays within MaxTurnSeconds even with techniques on both sides.
+    // Technique id + stage -> long technique clip, for techniques whose turns play their own clip
+    // and stretch the turn (ReplayTurnTiming). Empty for now: 삼재검법 plays the ordinary combat
+    // clips on the normal turn timing, and the first cuts of the four technique clips are parked in
+    // CharacterArt/Combat/_Unused until they are remade. A new entry needs its Animator state (named
+    // like its clip), length and main strike in clip seconds, and must keep a technique turn
+    // (clip + tail) within MaxTurnSeconds even with techniques on both sides.
     public static class TechniqueClipCatalog
     {
-        public const string SamjaeStage1State = "Skill_Samjae1";
-        public const string MaehwaStage1State = "Skill_Maehwa1";
-        public const string JewangStage1State = "Skill_Jewang1";
-        public const string WolyeongStage1State = "Skill_Wolyeong1";
-
         public const float MaxTurnSeconds = 3f;
 
-        // Stage 2 clips go in a matching branch per technique when they exist.
         public static bool TryGet(string techniqueId, int stage, out TechniqueClip clip)
         {
             clip = default;
-            if (stage != 1)
-                return false;
-
-            switch (techniqueId)
-            {
-                // Closing sideways sweep (the last of its three strikes).
-                case ShapeTemplates.TriangleId: clip = new TechniqueClip(SamjaeStage1State, 2.25f, 1.933f); return true;
-                // Last thrust of the flurry.
-                case ShapeTemplates.FlowerId: clip = new TechniqueClip(MaehwaStage1State, 2.3f, 1.983f); return true;
-                // The single downward strike after the held raise.
-                case ShapeTemplates.SwordId: clip = new TechniqueClip(JewangStage1State, 2.2f, 1.6f); return true;
-                // Closing low slash.
-                case ShapeTemplates.CrescentId: clip = new TechniqueClip(WolyeongStage1State, 2.15f, 1.833f); return true;
-                default: return false;
-            }
+            return false;
         }
 
         public static TechniqueClip? For(TechniqueCast? cast)

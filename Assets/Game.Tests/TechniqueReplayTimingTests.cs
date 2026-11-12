@@ -1,57 +1,52 @@
 using Game.Client.Battle;
 using Game.Sim.Shape;
+using Game.Sim.Technique;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 
 namespace Game.Tests
 {
+    // Long technique turns (TechniqueCast + ReplayTurnTiming). The catalog has no clips for now, so
+    // the timing rules are checked on made-up clips shaped like the parked first cuts.
     public class TechniqueReplayTimingTests
     {
         private const float Eps = 1e-4f;
 
-        private static TechniqueClip Clip(string id)
-        {
-            Assert.IsTrue(TechniqueClipCatalog.TryGet(id, 1, out TechniqueClip clip), id);
-            return clip;
-        }
+        private static readonly TechniqueClip LateStrike = new TechniqueClip("Late", 2.2f, 1.6f);
+        private static readonly TechniqueClip LateLong = new TechniqueClip("LateLong", 2.3f, 1.983f);
+        private static readonly TechniqueClip ShortTail = new TechniqueClip("ShortTail", 2.15f, 1.833f);
+        private static readonly TechniqueClip EarlyStrike = new TechniqueClip("Early", 2f, 0.3f);
 
-        [TestCase(ShapeTemplates.TriangleId, TechniqueClipCatalog.SamjaeStage1State)]
-        [TestCase(ShapeTemplates.FlowerId, TechniqueClipCatalog.MaehwaStage1State)]
-        [TestCase(ShapeTemplates.SwordId, TechniqueClipCatalog.JewangStage1State)]
-        [TestCase(ShapeTemplates.CrescentId, TechniqueClipCatalog.WolyeongStage1State)]
-        public void Catalog_EachTechniqueHasItsStage1Clip(string id, string state)
-        {
-            Assert.AreEqual(state, Clip(id).State);
-            Assert.That(Clip(id).Strike, Is.GreaterThan(0f).And.LessThan(Clip(id).Length));
-        }
+        private static readonly TechniqueClip[] Clips = { LateStrike, LateLong, ShortTail, EarlyStrike };
 
         [Test]
-        public void Catalog_UnknownIdsAndMissingStagesHaveNoClip()
+        public void Catalog_HasNoClipsForNow()
         {
-            Assert.IsFalse(TechniqueClipCatalog.TryGet("circle", 1, out _));
-            Assert.IsFalse(TechniqueClipCatalog.TryGet(null, 1, out _));
-            Assert.IsFalse(TechniqueClipCatalog.TryGet(ShapeTemplates.SwordId, 2, out _));
-            Assert.IsFalse(TechniqueClipCatalog.TryGet(ShapeTemplates.SwordId, 0, out _));
+            foreach (HiddenTechniqueDefinition d in HiddenTechniques.All)
+            {
+                Assert.IsFalse(TechniqueClipCatalog.TryGet(d.Id, 1, out _), d.Id);
+                Assert.IsNull(TechniqueClipCatalog.For(new TechniqueCast(0, d.Id, 1)), d.Id);
+            }
             Assert.IsNull(TechniqueClipCatalog.For(null));
-            Assert.IsNull(TechniqueClipCatalog.For(new TechniqueCast(0, ShapeTemplates.SwordId, 2)));
-            Assert.AreEqual(TechniqueClipCatalog.JewangStage1State, TechniqueClipCatalog.For(new TechniqueCast(0, ShapeTemplates.SwordId, 1))?.State);
         }
 
-        // CharacterMotionPlayer finds a clip by its state name and waits out its length, so the
-        // catalog's state, clip name and length must all match the asset.
-        [TestCase(ShapeTemplates.TriangleId)]
-        [TestCase(ShapeTemplates.FlowerId)]
-        [TestCase(ShapeTemplates.SwordId)]
-        [TestCase(ShapeTemplates.CrescentId)]
-        public void Catalog_MatchesTheClipAsset(string id)
+        // Guards future entries: any technique turn the catalog can make, one side or both, fits the cap.
+        [Test]
+        public void Catalog_EveryTechniqueTurnFitsTheCap()
         {
-            TechniqueClip clip = Clip(id);
-            var asset = AssetDatabase.LoadAssetAtPath<AnimationClip>($"Assets/CharacterArt/Combat/{clip.State}.anim");
-            Assert.IsNotNull(asset, clip.State);
-            Assert.AreEqual(clip.State, asset.name);
-            Assert.AreEqual(clip.Length, asset.length, 1f / 60f);
-            Assert.IsFalse(asset.isLooping);
+            foreach (HiddenTechniqueDefinition a in HiddenTechniques.All)
+            {
+                TechniqueClip? clipA = TechniqueClipCatalog.For(new TechniqueCast(0, a.Id, 1));
+                if (clipA == null)
+                    continue;
+                Assert.That(ReplayTurnTiming.For(clipA, null).Interval, Is.LessThanOrEqualTo(TechniqueClipCatalog.MaxTurnSeconds), a.Id);
+                foreach (HiddenTechniqueDefinition b in HiddenTechniques.All)
+                {
+                    TechniqueClip? clipB = TechniqueClipCatalog.For(new TechniqueCast(0, b.Id, 1));
+                    if (clipB != null)
+                        Assert.That(ReplayTurnTiming.For(clipA, clipB).Interval, Is.LessThanOrEqualTo(TechniqueClipCatalog.MaxTurnSeconds), $"{a.Id} vs {b.Id}");
+                }
+            }
         }
 
         [Test]
@@ -76,39 +71,36 @@ namespace Game.Tests
             Assert.AreEqual(0f, t.StartDelayB);
         }
 
-        [TestCase(ShapeTemplates.TriangleId)]
-        [TestCase(ShapeTemplates.FlowerId)]
-        [TestCase(ShapeTemplates.SwordId)]
-        [TestCase(ShapeTemplates.CrescentId)]
-        public void Timing_OneSideTechnique_ImpactOnItsStrike_IntervalIsClipPlusTail(string id)
+        [Test]
+        public void Timing_OneSideTechnique_ImpactOnItsStrike_IntervalIsClipPlusTail()
         {
-            TechniqueClip clip = Clip(id);
+            foreach (TechniqueClip clip in Clips)
             foreach (bool onA in new[] { true, false })
             {
                 ReplayTurnTiming t = onA ? ReplayTurnTiming.For(clip, null) : ReplayTurnTiming.For(null, clip);
                 float techDelay = onA ? t.StartDelayA : t.StartDelayB;
                 float otherDelay = onA ? t.StartDelayB : t.StartDelayA;
+                string at = $"{clip.State} on {(onA ? "A" : "B")}";
 
-                Assert.IsTrue(t.IsTechniqueTurn);
-                Assert.That(techDelay, Is.GreaterThanOrEqualTo(0f));
-                Assert.That(otherDelay, Is.GreaterThanOrEqualTo(0f));
+                Assert.IsTrue(t.IsTechniqueTurn, at);
+                Assert.That(techDelay, Is.GreaterThanOrEqualTo(0f), at);
+                Assert.That(otherDelay, Is.GreaterThanOrEqualTo(0f), at);
                 // Both strikes land on the impact: the technique's main strike and the normal clip's 0.48 s.
-                Assert.AreEqual(t.Impact, techDelay + clip.Strike, Eps);
-                Assert.AreEqual(t.Impact, otherDelay + ReplayTurnTiming.NormalImpact, Eps);
-                Assert.AreEqual(techDelay + clip.Length + ReplayTurnTiming.TechniqueTail, t.Interval, Eps);
-                Assert.That(t.FocusEnd, Is.GreaterThan(t.Impact).And.LessThan(t.Interval));
+                Assert.AreEqual(t.Impact, techDelay + clip.Strike, Eps, at);
+                Assert.AreEqual(t.Impact, otherDelay + ReplayTurnTiming.NormalImpact, Eps, at);
+                Assert.AreEqual(techDelay + clip.Length + ReplayTurnTiming.TechniqueTail, t.Interval, Eps, at);
+                Assert.That(t.FocusEnd, Is.GreaterThan(t.Impact).And.LessThan(t.Interval), at);
             }
         }
 
         [Test]
         public void Timing_LateStrike_TechniqueStartsAtOnce_OtherSideWaits()
         {
-            TechniqueClip jewang = Clip(ShapeTemplates.SwordId);   // strike 1.6 s
-            ReplayTurnTiming t = ReplayTurnTiming.For(jewang, null);
+            ReplayTurnTiming t = ReplayTurnTiming.For(LateStrike, null);
             Assert.AreEqual(0f, t.StartDelayA, Eps);
-            Assert.AreEqual(jewang.Strike, t.Impact, Eps);
-            Assert.AreEqual(jewang.Strike - 0.48f, t.StartDelayB, Eps);
-            Assert.AreEqual(jewang.Length + 0.4f, t.Interval, Eps);
+            Assert.AreEqual(1.6f, t.Impact, Eps);
+            Assert.AreEqual(1.6f - 0.48f, t.StartDelayB, Eps);
+            Assert.AreEqual(2.2f + 0.4f, t.Interval, Eps);
         }
 
         [Test]
@@ -116,46 +108,36 @@ namespace Game.Tests
         {
             // A strike before 0.48 s would need the normal clip to start before the turn, so the
             // technique waits instead and the impact stays at 0.48 s.
-            var early = new TechniqueClip("Early", 2f, 0.3f);
-            ReplayTurnTiming t = ReplayTurnTiming.For(null, early);
+            ReplayTurnTiming t = ReplayTurnTiming.For(null, EarlyStrike);
             Assert.AreEqual(0.48f, t.Impact, Eps);
             Assert.AreEqual(0f, t.StartDelayA, Eps);
             Assert.AreEqual(0.18f, t.StartDelayB, Eps);
             Assert.AreEqual(0.18f + 2f + 0.4f, t.Interval, Eps);
         }
 
-        private static readonly string[] AllIds =
-            { ShapeTemplates.TriangleId, ShapeTemplates.FlowerId, ShapeTemplates.SwordId, ShapeTemplates.CrescentId };
-
         [Test]
         public void Timing_BothSides_StrikesMeetOnTheLaterOne_TurnCoversBothClips()
         {
-            foreach (string idA in AllIds)
-            foreach (string idB in AllIds)
+            foreach (TechniqueClip a in Clips)
+            foreach (TechniqueClip b in Clips)
             {
-                TechniqueClip a = Clip(idA);
-                TechniqueClip b = Clip(idB);
                 ReplayTurnTiming t = ReplayTurnTiming.For(a, b);
-                Assert.AreEqual(Mathf.Max(a.Strike, b.Strike), t.Impact, Eps, $"{idA} vs {idB}");
-                Assert.AreEqual(t.Impact, t.StartDelayA + a.Strike, Eps);
-                Assert.AreEqual(t.Impact, t.StartDelayB + b.Strike, Eps);
-                Assert.IsTrue(t.StartDelayA < Eps || t.StartDelayB < Eps, "the later strike's side starts at once");
+                string at = $"{a.State} vs {b.State}";
+                Assert.AreEqual(Mathf.Max(a.Strike, b.Strike), t.Impact, Eps, at);
+                Assert.AreEqual(t.Impact, t.StartDelayA + a.Strike, Eps, at);
+                Assert.AreEqual(t.Impact, t.StartDelayB + b.Strike, Eps, at);
+                Assert.IsTrue(t.StartDelayA < Eps || t.StartDelayB < Eps, "the later strike's side starts at once: " + at);
                 float end = Mathf.Max(t.StartDelayA + a.Length, t.StartDelayB + b.Length);
-                Assert.AreEqual(end + 0.4f, t.Interval, Eps);
+                Assert.AreEqual(end + 0.4f, t.Interval, Eps, at);
             }
         }
 
-        // Every technique turn, one side or both, fits in MaxTurnSeconds with the current cuts.
         [Test]
-        public void Timing_EveryTechniqueTurnFitsTheCap()
+        public void Timing_LongestBothSidesPair_IsTheLateLongVsLateStrike()
         {
-            foreach (string idA in AllIds)
-            {
-                Assert.That(ReplayTurnTiming.For(Clip(idA), null).Interval, Is.LessThanOrEqualTo(TechniqueClipCatalog.MaxTurnSeconds), idA);
-                Assert.That(ReplayTurnTiming.For(null, Clip(idA)).Interval, Is.LessThanOrEqualTo(TechniqueClipCatalog.MaxTurnSeconds), idA);
-                foreach (string idB in AllIds)
-                    Assert.That(ReplayTurnTiming.For(Clip(idA), Clip(idB)).Interval, Is.LessThanOrEqualTo(TechniqueClipCatalog.MaxTurnSeconds), $"{idA} vs {idB}");
-            }
+            // Mirrors the old Jewang vs Maehwa case, the longest pair the parked cuts allowed: 2.983 s.
+            ReplayTurnTiming t = ReplayTurnTiming.For(LateStrike, LateLong);
+            Assert.AreEqual(1.983f - 1.6f + 2.2f + 0.4f, t.Interval, Eps);
         }
     }
 }

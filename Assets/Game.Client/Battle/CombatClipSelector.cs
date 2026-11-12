@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Game.Sim.Battle;
 using Game.Sim.Stroke;
+using Game.Sim.Technique;
 
 namespace Game.Client.Battle
 {
@@ -16,19 +17,22 @@ namespace Game.Client.Battle
 
     // Picks the CharacterMotionPlayer state for one side's turn. Presentation only: the turn's
     // type and outcome come from Game.sim's TurnEvent and the points are the recorded stroke, so
-    // nothing here can change a result or its timing.
+    // nothing here can change a result or its timing. The battle replay and the drawing preview
+    // both pick through here.
     //
     // Left/right is the attacking character's own left/right (the camera looks at both fighters
     // side-on, so screen left/right is their forward/back), and neither side is mirrored. Stroke
     // y is up for both player strokes (frame cm) and AI strokes (canvas units), so only signs are
     // compared and the two unit systems need no conversion here.
+    //
+    // Every vertical slash plays the downward cut, whichever way it was drawn: there is no rising
+    // cut clip in use. A hidden-technique turn plays its chosen move's clip, ignoring the drawn shape.
     public static class CombatClipSelector
     {
         public const string ThrustState = "Combat_Thrust";
         public const string SlashLeftToRightState = "Combat_SlashLR";
         public const string SlashRightToLeftState = "Combat_SlashRL";
-        public const string SlashTopToBottomState = "Combat_SlashDown";
-        public const string SlashBottomToTopState = "Combat_SlashUp";
+        public const string SlashVerticalState = "Combat_SlashDown";
         public const string CounterState = "Combat_Counter";
 
         // Review setting: true sends every slash direction but left-to-right back to the original
@@ -52,15 +56,23 @@ namespace Game.Client.Battle
 
         // State for one side of a replayed turn. A counter plays Combat_Counter only when it
         // landed (Counter vs Slash with contact); a failed one keeps Guard.
-        public static string StateForTurn(TurnEvent e, bool sideA, IReadOnlyList<StrokePoint> points)
+        public static string StateForTurn(TurnEvent e, bool sideA, TechniqueStep? step)
         {
             BattleStepType type = sideA ? e.TypeA : e.TypeB;
             bool counterLanded = type == BattleStepType.Counter && e.Reason == TurnReason.CrossContact;
-            return StateFor(type, points, counterLanded);
+            return StateFor(type, step?.RawPoints, counterLanded, step?.HiddenMove ?? HiddenTechniqueMove.None);
         }
 
-        public static string StateFor(BattleStepType type, IReadOnlyList<StrokePoint> points, bool counterLanded)
+        public static string StateFor(BattleStepType type, IReadOnlyList<StrokePoint> points, bool counterLanded,
+            HiddenTechniqueMove hiddenMove = HiddenTechniqueMove.None)
         {
+            switch (hiddenMove)
+            {
+                case HiddenTechniqueMove.HorizontalSlash: return SlashLeftToRightState;
+                case HiddenTechniqueMove.VerticalSlash: return SlashVerticalState;
+                case HiddenTechniqueMove.Thrust: return ThrustState;
+            }
+
             switch (type)
             {
                 case BattleStepType.Thrust:
@@ -73,9 +85,7 @@ namespace Game.Client.Battle
                         return SlashLeftToRightState;
                     if (UseLegacySlashFallback)
                         return CharacterMotionPlayer.SlashState;
-                    return direction == SlashDirection.RightToLeft ? SlashRightToLeftState
-                        : direction == SlashDirection.TopToBottom ? SlashTopToBottomState
-                        : SlashBottomToTopState;
+                    return direction == SlashDirection.RightToLeft ? SlashRightToLeftState : SlashVerticalState;
             }
         }
     }
