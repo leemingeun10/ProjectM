@@ -10,8 +10,8 @@ namespace Game.Client.Battle
     // Drawing preview: plays the motion a completed stroke would fight with (CombatClipSelector) on character A.
     // A new stroke mid-swing restarts playback from the new clip.
     //
-    // When the counter toggle is on, plays Guard -> Slash instead. This is only a preview of the
-    // motion for a stroke drawn in counter mode, NOT a counter success/failure judgement.
+    // When the counter toggle is on, plays the counter move (as if it landed). This is only a
+    // preview of the motion for a stroke drawn in counter mode, NOT a counter success/failure judgement.
     // Battle playback is driven separately by BattleReplayController.
     public class StrokeAnimationPlayer : MonoBehaviour
     {
@@ -47,12 +47,10 @@ namespace Game.Client.Battle
 
         private void OnStrokeCompleted(StrokeResult result, IReadOnlyList<StrokePoint> points)
         {
-            // Counter preview ignores the stroke type: always Guard then Slash.
-            if (sequenceController.IsCounterOn)
-                motionPlayer.Play(CharacterMotionPlayer.GuardState, CharacterMotionPlayer.SlashState);
-            else
-                motionPlayer.Play(CombatClipSelector.StateFor(
-                    result.Type == StrokeType.Thrust ? BattleStepType.Thrust : BattleStepType.Slash, points));
+            // A stroke drawn in counter mode fights as Counter whatever its shape.
+            BattleStepType type = sequenceController.IsCounterOn ? BattleStepType.Counter
+                : result.Type == StrokeType.Thrust ? BattleStepType.Thrust : BattleStepType.Slash;
+            motionPlayer.Play(CombatClipSelector.StateFor(type, points, counterLanded: true));
         }
     }
 }

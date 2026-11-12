@@ -216,8 +216,8 @@ namespace Game.Client.Battle
                 descriptionText.text = TurnNarrator.Describe(e);
                 strokeComparison.Show(StepAt(currentStepsA, e.TurnIndex), StepAt(currentStepsB, e.TurnIndex), e.TypeA, e.TypeB);
                 strokeComparison.SetReveal(0f);
-                characterA.Play(CombatClipSelector.StateFor(e.TypeA, StepAt(currentStepsA, e.TurnIndex)?.RawPoints));
-                characterB.Play(CombatClipSelector.StateFor(e.TypeB, StepAt(currentStepsB, e.TurnIndex)?.RawPoints));
+                characterA.Play(CombatClipSelector.StateForTurn(e, true, StepAt(currentStepsA, e.TurnIndex)?.RawPoints));
+                characterB.Play(CombatClipSelector.StateForTurn(e, false, StepAt(currentStepsB, e.TurnIndex)?.RawPoints));
                 cameraRig.SetFocused(true);
                 bool impactShown = false;
 

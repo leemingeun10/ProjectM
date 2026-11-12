@@ -15,8 +15,8 @@ namespace Game.Client.Battle
     }
 
     // Picks the CharacterMotionPlayer state for one side's turn. Presentation only: the turn's
-    // type comes from Game.sim's TurnEvent and the points are the recorded stroke, so nothing here
-    // can change a result or its timing.
+    // type and outcome come from Game.sim's TurnEvent and the points are the recorded stroke, so
+    // nothing here can change a result or its timing.
     //
     // Left/right is the attacking character's own left/right (the camera looks at both fighters
     // side-on, so screen left/right is their forward/back), and neither side is mirrored. Stroke
@@ -26,14 +26,19 @@ namespace Game.Client.Battle
     {
         public const string ThrustState = "Combat_Thrust";
         public const string SlashLeftToRightState = "Combat_SlashLR";
+        // Combat_SlashLR played through a mirrored Animator state.
+        public const string SlashRightToLeftState = "Combat_SlashRL";
+        public const string SlashTopToBottomState = "Combat_SlashDown";
+        public const string SlashBottomToTopState = "Combat_SlashUp";
+        public const string CounterState = "Combat_Counter";
 
-        // Temporary setting for reviewing the new clips: when false, slash directions without a
-        // combat clip of their own play Combat_SlashLR instead of the original Slash. Set true to
-        // bring back the legacy Slash (its Animator state is kept for that).
+        // Review setting: true sends every slash direction but left-to-right back to the original
+        // Slash (its Animator state is kept for that).
         public static bool UseLegacySlashFallback { get; set; } = false;
 
-        // |dx| >= |dy| is horizontal; a stroke with no displacement (or fewer than 2 points)
-        // counts as LeftToRight.
+        // |dx| >= |dy| is horizontal, so a diagonal goes by its larger axis and an exact 45° by
+        // its horizontal part; a stroke with no displacement (or fewer than 2 points) counts as
+        // LeftToRight.
         public static SlashDirection DirectionOf(IReadOnlyList<StrokePoint> points)
         {
             if (points == null || points.Count < 2)
@@ -46,22 +51,32 @@ namespace Game.Client.Battle
             return dy < 0 ? SlashDirection.TopToBottom : SlashDirection.BottomToTop;
         }
 
-        // Counter maps to Guard regardless of whether the counter landed. Slash directions without
-        // a combat clip yet fall back per UseLegacySlashFallback.
-        public static string StateFor(BattleStepType type, IReadOnlyList<StrokePoint> points)
+        // State for one side of a replayed turn. A counter plays Combat_Counter only when it
+        // landed (Counter vs Slash with contact); a failed one keeps Guard.
+        public static string StateForTurn(TurnEvent e, bool sideA, IReadOnlyList<StrokePoint> points)
+        {
+            BattleStepType type = sideA ? e.TypeA : e.TypeB;
+            bool counterLanded = type == BattleStepType.Counter && e.Reason == TurnReason.CrossContact;
+            return StateFor(type, points, counterLanded);
+        }
+
+        public static string StateFor(BattleStepType type, IReadOnlyList<StrokePoint> points, bool counterLanded)
         {
             switch (type)
             {
                 case BattleStepType.Thrust:
                     return ThrustState;
                 case BattleStepType.Counter:
-                    return CharacterMotionPlayer.GuardState;
+                    return counterLanded ? CounterState : CharacterMotionPlayer.GuardState;
                 default:
-                    if (DirectionOf(points) == SlashDirection.LeftToRight)
+                    SlashDirection direction = DirectionOf(points);
+                    if (direction == SlashDirection.LeftToRight)
                         return SlashLeftToRightState;
-                    // TODO(Phase 2a): pick Combat_SlashRL / Combat_SlashDown / Combat_SlashUp per
-                    // direction once those clips exist; Combat_SlashLR stands in for all of them.
-                    return UseLegacySlashFallback ? CharacterMotionPlayer.SlashState : SlashLeftToRightState;
+                    if (UseLegacySlashFallback)
+                        return CharacterMotionPlayer.SlashState;
+                    return direction == SlashDirection.RightToLeft ? SlashRightToLeftState
+                        : direction == SlashDirection.TopToBottom ? SlashTopToBottomState
+                        : SlashBottomToTopState;
             }
         }
     }

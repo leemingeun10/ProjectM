@@ -1,0 +1,12 @@
+{
+    "asset": "d458d5c9b221cd84ebcb90a05ae5eaea",
+    "fileName": "01a1cf32-54b3-774c-a391-328bb71b1f33.fbx",
+    "prompt": "A swordsman starts with the sword low beside the hip and cuts upward in a rising slash to above the head, follow-through, recover to ready stance.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 812608024,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

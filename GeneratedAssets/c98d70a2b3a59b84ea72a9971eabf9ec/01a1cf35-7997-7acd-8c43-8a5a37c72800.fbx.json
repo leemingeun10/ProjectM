@@ -1,0 +1,12 @@
+{
+    "asset": "c98d70a2b3a59b84ea72a9971eabf9ec",
+    "fileName": "01a1cf35-7997-7acd-8c43-8a5a37c72800.fbx",
+    "prompt": "A swordsman parries an incoming strike with a quick sideways sword deflection, then immediately counters with a sharp forward thrust, recover to ready stance.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 234940116,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}
