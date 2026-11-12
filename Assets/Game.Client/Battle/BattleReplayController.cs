@@ -17,17 +17,13 @@ namespace Game.Client.Battle
     // "홈으로", and leaving the battle screen by any route closes the replay.
     // Each turn also shows both sides' recorded strokes for that turn (drawn in step with the
     // swing) and a one-line explanation of how the turn resolved (TurnNarrator).
+    // A turn takes ReplayTurnTiming.Normal (1.6 s, impact at 0.48 s; 2x halves it like everything
+    // else) unless a side has a TechniqueCast for it: then that side plays the technique clip and the
+    // turn stretches to fit it, with the impact on the clip's main strike. Only the presentation changes.
     public class BattleReplayController : MonoBehaviour
     {
-        // Long enough to read the turn's one-line explanation at 1x; 2x halves it like everything else.
-        private const float TurnInterval = 1.6f;
         private const float HpLerpDuration = 0.3f;
         private const float FastSpeed = 2f;
-        // Fraction of a turn at which the blades are treated as meeting: hit reactions and the
-        // impact flash fire here rather than at turn start, when the swings have barely begun.
-        private const float ImpactFraction = 0.3f;
-        // Fraction of a turn after which the camera eases back out of its turn focus.
-        private const float FocusEndFraction = 0.65f;
         private const int OutcomeFontSize = 130;
 
         [SerializeField] private GameObject replayPanel;
@@ -61,6 +57,8 @@ namespace Game.Client.Battle
         private BattleResult currentResult;
         private IReadOnlyList<TechniqueStep> currentStepsA;
         private IReadOnlyList<TechniqueStep> currentStepsB;
+        private IReadOnlyList<TechniqueCast> currentCastsA;
+        private IReadOnlyList<TechniqueCast> currentCastsB;
         private string currentResultNote;
         private Action pendingOnFinished;
         private Coroutine replayRoutine;
@@ -126,13 +124,17 @@ namespace Game.Client.Battle
         // resultNote, if given, is shown under the outcome when the replay ends.
         // onFinished runs exactly once: when the replay first reaches its end, or earlier if the
         // replay is closed or replaced first, so skipping a replay cannot skip its consequences.
+        // castsA/castsB, if given, mark the turns each side performs a technique on (see TechniqueCast).
         public void StartReplay(BattleResult result, IReadOnlyList<TechniqueStep> stepsA, IReadOnlyList<TechniqueStep> stepsB,
-            string resultNote = null, Action onFinished = null)
+            string resultNote = null, Action onFinished = null,
+            IReadOnlyList<TechniqueCast> castsA = null, IReadOnlyList<TechniqueCast> castsB = null)
         {
             FireFinished();
             currentResult = result;
             currentStepsA = stepsA;
             currentStepsB = stepsB;
+            currentCastsA = castsA;
+            currentCastsB = castsB;
             currentResultNote = resultNote;
             pendingOnFinished = onFinished;
             replayPanel.SetActive(true);
@@ -216,8 +218,16 @@ namespace Game.Client.Battle
                 descriptionText.text = TurnNarrator.Describe(e);
                 strokeComparison.Show(StepAt(currentStepsA, e.TurnIndex), StepAt(currentStepsB, e.TurnIndex), e.TypeA, e.TypeB);
                 strokeComparison.SetReveal(0f);
-                characterA.Play(CombatClipSelector.StateForTurn(e, true, StepAt(currentStepsA, e.TurnIndex)?.RawPoints));
-                characterB.Play(CombatClipSelector.StateForTurn(e, false, StepAt(currentStepsB, e.TurnIndex)?.RawPoints));
+
+                TechniqueClip? clipA = TechniqueClipCatalog.For(TechniqueCast.Find(CastsFor(true), e.TurnIndex));
+                TechniqueClip? clipB = TechniqueClipCatalog.For(TechniqueCast.Find(CastsFor(false), e.TurnIndex));
+                ReplayTurnTiming timing = ReplayTurnTiming.For(clipA, clipB);
+                string stateA = clipA?.State ?? CombatClipSelector.StateForTurn(e, true, StepAt(currentStepsA, e.TurnIndex)?.RawPoints);
+                string stateB = clipB?.State ?? CombatClipSelector.StateForTurn(e, false, StepAt(currentStepsB, e.TurnIndex)?.RawPoints);
+                bool startedA = false;
+                bool startedB = false;
+                LogTurnTiming(e.TurnIndex, timing, stateA, stateB);
+
                 cameraRig.SetFocused(true);
                 bool impactShown = false;
 
@@ -228,22 +238,38 @@ namespace Game.Client.Battle
 
                 // Elapsed time only advances while unpaused, so pausing freezes both the HP
                 // tween and the turn timer and resuming continues from the exact same point.
+                // turnTime is the turn's own clock in 1x seconds, compared against timing directly.
                 float elapsed = 0f;
-                while (elapsed < TurnInterval / speed)
+                while (elapsed < timing.Interval / speed)
                 {
-                    float turnProgress = elapsed * speed / TurnInterval;
+                    float turnTime = elapsed * speed;
+                    // Each clip starts once its side's delay has passed (on the first frame when it
+                    // is 0), so both strikes land on timing.Impact.
+                    if (!startedA && turnTime >= timing.StartDelayA)
+                    {
+                        startedA = true;
+                        characterA.Play(stateA);
+                    }
+
+                    if (!startedB && turnTime >= timing.StartDelayB)
+                    {
+                        startedB = true;
+                        characterB.Play(stateB);
+                    }
+
                     // The previews finish drawing as the blades meet.
-                    strokeComparison.SetReveal(turnProgress / ImpactFraction);
-                    if (!impactShown && turnProgress >= ImpactFraction)
+                    strokeComparison.SetReveal(turnTime / timing.Impact);
+                    if (!impactShown && turnTime >= timing.Impact)
                     {
                         impactShown = true;
+                        LogImpact(e.TurnIndex, timing, turnTime);
                         PlayImpact(e);
                     }
 
-                    if (turnProgress >= FocusEndFraction)
+                    if (turnTime >= timing.FocusEnd)
                         cameraRig.SetFocused(false);
 
-                    float t = Mathf.Clamp01((elapsed - ImpactFraction * TurnInterval / speed) / HpLerpDuration);
+                    float t = Mathf.Clamp01((elapsed - timing.Impact / speed) / HpLerpDuration);
                     shownA = Mathf.Lerp(fromA, toA, t);
                     shownB = Mathf.Lerp(fromB, toB, t);
                     SetHp(shownA, shownB);
@@ -280,6 +306,46 @@ namespace Game.Client.Battle
             Action callback = pendingOnFinished;
             pendingOnFinished = null;
             callback?.Invoke();
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // For TechniquePreviewTool only.
+        internal CharacterMotionPlayer PreviewCharacter(bool sideA) => sideA ? characterA : characterB;
+
+        internal bool PreviewRestart()
+        {
+            if (currentResult == null || !replayPanel.activeSelf)
+                return false;
+            Restart();
+            return true;
+        }
+#endif
+
+        private IReadOnlyList<TechniqueCast> CastsFor(bool sideA)
+        {
+            IReadOnlyList<TechniqueCast> casts = sideA ? currentCastsA : currentCastsB;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Casts injected from the preview tool stand in until recognition and AI settings supply real ones.
+            if (casts == null || casts.Count == 0)
+                casts = TechniquePreviewTool.InjectedCasts(sideA);
+#endif
+            return casts;
+        }
+
+        // Editor/dev-build log for checking technique turns; normal turns log nothing.
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogTurnTiming(int turnIndex, ReplayTurnTiming timing, string stateA, string stateB)
+        {
+            if (timing.IsTechniqueTurn)
+                Debug.Log($"[BattleReplay] turn {turnIndex + 1} start (t={Time.time:F3}): interval {timing.Interval:F3}s, impact at {timing.Impact:F3}s, " +
+                          $"A {stateA} from {timing.StartDelayA:F3}s, B {stateB} from {timing.StartDelayB:F3}s");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogImpact(int turnIndex, ReplayTurnTiming timing, float turnTime)
+        {
+            if (timing.IsTechniqueTurn)
+                Debug.Log($"[BattleReplay] turn {turnIndex + 1} impact (t={Time.time:F3}) at turn time {turnTime:F3}s");
         }
 
         private static TechniqueStep? StepAt(IReadOnlyList<TechniqueStep> steps, int turnIndex)
