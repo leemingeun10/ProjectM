@@ -15,6 +15,10 @@ namespace Game.Client.Cultivation
 
         public static string FilePath => Path.Combine(Application.persistentDataPath, FileName);
 
+        // Raised after every successful Save with the stats just written, so screens that show or
+        // use them (e.g. the workshop's stroke length cap) stay current within a session.
+        public static event Action<CultivationStats> Saved;
+
         // Today in the device's local time zone as a YYYYMMDD integer, so the daily training
         // resets at the player's own midnight.
         public static int Today()
@@ -47,6 +51,7 @@ namespace Game.Client.Cultivation
         {
             File.WriteAllText(FilePath, CultivationJsonSerializer.Serialize(stats), new UTF8Encoding(false));
             Debug.Log($"[Cultivation] 저장 완료 (외공 {stats.ExternalPower}, 내공 {stats.InternalPower}, 마지막 수련 {stats.LastTrainingDate}): {FilePath}");
+            Saved?.Invoke(stats);
         }
     }
 }

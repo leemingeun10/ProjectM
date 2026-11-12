@@ -10218,6 +10218,7 @@ MonoBehaviour:
   pvpRecordHudText: {fileID: 890248584}
   messageText: {fileID: 1787175922}
   replayController: {fileID: 629779902}
+  scenery: {fileID: 1497238502}
   slotPickPanel: {fileID: 1072794560}
   slotPickTitle: {fileID: 1020316179}
   slotPickBody: {fileID: 1350473438}
@@ -18841,6 +18842,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb28c234e95a30d449c2ba5c272985c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Client::Game.Client.Battle.InkWashBackground
+  flow: {fileID: 1382461945}
   skyShader: {fileID: 4800000, guid: ab57d8a5df3fe9248a789abdedda35c1, type: 3}
   unlitFogShader: {fileID: 4800000, guid: 441976c21630d1f479632914f180ca88, type: 3}
   stageCenter: {x: 0, y: 0, z: -1}
@@ -18850,14 +18852,6 @@ MonoBehaviour:
   backdropFocusU: 0.32
   backdropFocusV: 0.38
   backdropMargin: 1.1
-  skyTopColor: {r: 0.9098039, g: 0.89411765, b: 0.8509804, a: 1}
-  skyHorizonColor: {r: 0.9490196, g: 0.87058824, b: 0.76862746, a: 1}
-  fogColor: {r: 0.93333334, g: 0.8862745, b: 0.8156863, a: 1}
-  fogStart: 15
-  fogEnd: 160
-  platformColor: {r: 0.54509807, g: 0.4509804, b: 0.33333334, a: 1}
-  platformRadius: 3.5
-  platformThickness: 0.2
 --- !u!4 &1497238503
 Transform:
   m_ObjectHideFlags: 0

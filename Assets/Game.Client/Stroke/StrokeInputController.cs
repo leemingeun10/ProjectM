@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Game.Sim.Cultivation;
+using Game.Sim.Shape;
 using Game.Sim.Stroke;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -15,6 +17,8 @@ namespace Game.Client.Stroke
     // distance (via Screen.dpi). Game.sim receives centimetres from the frame centre, so a stroke
     // measures the same on every device regardless of resolution or canvas scaling.
     // The finished stroke stays on screen until the next stroke starts or ClearDisplayedStroke().
+    // A stroke stops growing once its drawn length reaches MaxStrokeLengthCm (the rest of the drag
+    // is ignored), so 외공 decides how much path one turn can hold.
     public class StrokeInputController : MonoBehaviour
     {
         public const float FrameWidthCm = 4.5f;
@@ -36,6 +40,20 @@ namespace Game.Client.Stroke
         // that were fed into the analyzer (for consumers that need the raw trajectory too).
         public event Action<StrokeResult, IReadOnlyList<StrokePoint>> StrokeCompleted;
 
+        // Path length cap for one stroke, in frame centimetres. Set from 외공 by whoever owns the
+        // player's stats (CultivationBattleRules.MaxStrokeLength).
+        public int MaxStrokeLengthCm { get; set; } = CultivationBattleRules.BaseStrokeLength;
+
+        // Every drawn point of the last completed stroke (not resampled), in frame cm * 1000, for
+        // shape recognition. Valid from StrokeCompleted until the next stroke completes.
+        public IReadOnlyList<ShapePoint> LastShapePoints => lastShapePoints;
+
+        // True when the last completed stroke was cut short by MaxStrokeLengthCm.
+        public bool LastStrokeHitLengthLimit { get; private set; }
+
+        // Drawn path length of the last completed stroke, in frame centimetres.
+        public float LastStrokeLengthCm { get; private set; }
+
         private readonly List<Vector2> localPoints = new List<Vector2>();
         private readonly List<RaycastResult> uiHits = new List<RaycastResult>();
         private PointerEventData pointerEventData;
@@ -43,6 +61,9 @@ namespace Game.Client.Stroke
         private Canvas canvas;
         private float dpi;
         private float frameScaleFactor = -1f;
+        private float drawnLengthCm;
+        private bool reachedLengthLimit;
+        private ShapePoint[] lastShapePoints = new ShapePoint[0];
 
         private void Awake()
         {
@@ -142,6 +163,8 @@ namespace Game.Client.Stroke
         {
             isDragging = true;
             localPoints.Clear();
+            drawnLengthCm = 0f;
+            reachedLengthLimit = false;
             AppendPoint(screenPos);
         }
 
@@ -150,8 +173,29 @@ namespace Game.Client.Stroke
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPos, null, out Vector2 localPoint))
                 return;
 
-            if (localPoints.Count > 0 && Vector2.Distance(localPoints[localPoints.Count - 1], localPoint) < 1f)
+            if (reachedLengthLimit)
                 return;
+
+            if (localPoints.Count > 0)
+            {
+                Vector2 last = localPoints[localPoints.Count - 1];
+                float stepUnits = Vector2.Distance(last, localPoint);
+                if (stepUnits < 1f)
+                    return;
+
+                // Cut the segment where the length budget runs out and stop accepting points.
+                float unitsPerCm = drawFrame.rect.width / FrameWidthCm;
+                float remainingCm = MaxStrokeLengthCm - drawnLengthCm;
+                float stepCm = stepUnits / unitsPerCm;
+                if (stepCm >= remainingCm)
+                {
+                    localPoint = Vector2.Lerp(last, localPoint, remainingCm / stepCm);
+                    stepCm = remainingCm;
+                    reachedLengthLimit = true;
+                    Debug.Log($"[Stroke] 검로 길이 한도 {MaxStrokeLengthCm}cm에 도달해 선이 멈췄습니다.");
+                }
+                drawnLengthCm += stepCm;
+            }
 
             localPoints.Add(localPoint);
             lineRenderer.SetPoints(localPoints);
@@ -168,7 +212,12 @@ namespace Game.Client.Stroke
                 return;
             }
 
-            List<Vector2> resampled = StrokeResampler.Resample(ToFrameCm(localPoints), resampleCount);
+            List<Vector2> frameCm = ToFrameCm(localPoints);
+            lastShapePoints = ToShapePoints(frameCm);
+            LastStrokeHitLengthLimit = reachedLengthLimit;
+            LastStrokeLengthCm = drawnLengthCm;
+            LogShapePoints(lastShapePoints); // TEMP: raw shape for recognizer tuning
+            List<Vector2> resampled = StrokeResampler.Resample(frameCm, resampleCount);
             List<StrokePoint> simPoints = ToSimPoints(resampled);
             StrokeResult result = StrokeAnalyzer.Analyze(simPoints);
             LogResult(result);
@@ -199,6 +248,26 @@ namespace Game.Client.Stroke
                 simPoints.Add(new StrokePoint(rawX, rawY));
             }
             return simPoints;
+        }
+
+        // Same boundary conversion as ToSimPoints, into the recognizer's int point type.
+        private static ShapePoint[] ToShapePoints(List<Vector2> cmPoints)
+        {
+            var points = new ShapePoint[cmPoints.Count];
+            for (int i = 0; i < cmPoints.Count; i++)
+                points[i] = new ShapePoint((int)Math.Round(cmPoints[i].x * Fixed.Scale), (int)Math.Round(cmPoints[i].y * Fixed.Scale));
+            return points;
+        }
+
+        // TEMP: dumps the drawn points (cm * 1000) so a hand-drawn shape can be replayed offline
+        // through ShapeRecognizer. Remove once the hidden-technique shapes are tuned.
+        private void LogShapePoints(ShapePoint[] points)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"[ShapeDebug] {points.Length} pts, {drawnLengthCm:F2}cm{(reachedLengthLimit ? " (한도에서 끊김)" : "")}: ");
+            foreach (ShapePoint p in points)
+                sb.Append(p.X).Append(',').Append(p.Y).Append(' ');
+            Debug.Log(sb.ToString());
         }
 
         // Calibration aid for rebalancing: the Area a perfect radius-1cm circle gets after going

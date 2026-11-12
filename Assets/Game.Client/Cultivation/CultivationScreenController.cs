@@ -212,7 +212,7 @@ namespace Game.Client.Cultivation
                 font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             root = (RectTransform)transform;
-            stage = new CultivationStage(characterPrefab, meditationClip, InkTheme.Charcoal, InkTheme.Hex(0x3A3630));
+            stage = new CultivationStage(characterPrefab, meditationClip, InkTheme.Charcoal);
 
             Image background = MakeImage(root, "Background", InkTheme.Ink);
             Stretch(background.rectTransform);

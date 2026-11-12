@@ -5,6 +5,7 @@ using Game.Client.Battle;
 using Game.Client.Flow;
 using Game.Client.Progress;
 using Game.Client.Pvp;
+using Game.Client.Scenery;
 using Game.Client.Stroke;
 using Game.Client.Technique;
 using Game.Client.Ui;
@@ -56,6 +57,8 @@ namespace Game.Client.Stage
         [SerializeField] private Text pvpRecordHudText;
         [SerializeField] private Text messageText;
         [SerializeField] private BattleReplayController replayController;
+        // Each 수련 chapter fights in its own set (ArenaThemes.ForChapter); 비무 uses its own.
+        [SerializeField] private InkWashBackground scenery;
         // Popup shared by both screens: picks among complete slots, or explains why a battle
         // cannot start (offering the way to 무공 제작).
         [SerializeField] private GameObject slotPickPanel;
@@ -375,7 +378,12 @@ namespace Game.Client.Stage
                 note = RecordClear(stageIndex);
 
             messageText.text = note ?? string.Empty;
-            flow.GoTo(GameScreen.Battle, () => replayController.StartReplay(result, playerSteps, aiSteps, note));
+            ArenaTheme theme = ArenaThemes.ForChapter(StageChapters.ChapterOf(stageIndex));
+            flow.GoTo(GameScreen.Battle, () =>
+            {
+                scenery.ApplyTheme(theme);
+                replayController.StartReplay(result, playerSteps, aiSteps, note);
+            });
         }
 
         // Unlike stage clears, the PvP result is reported when the replay ends (or is closed early;
@@ -391,11 +399,15 @@ namespace Game.Client.Stage
             LogResult("[Pvp] PvP", result);
 
             messageText.text = string.Empty;
-            flow.GoTo(GameScreen.Battle, () => replayController.StartReplay(result, playerSteps, opponentSteps, "비무", () =>
+            flow.GoTo(GameScreen.Battle, () =>
             {
-                pvpBackend.ReportResult(result.Outcome);
-                RefreshPvpRecord();
-            }));
+                scenery.ApplyTheme(ArenaThemes.Sparring);
+                replayController.StartReplay(result, playerSteps, opponentSteps, "비무", () =>
+                {
+                    pvpBackend.ReportResult(result.Outcome);
+                    RefreshPvpRecord();
+                });
+            });
         }
 
         // Saved right away rather than after the replay, so quitting mid-replay keeps the clear.

@@ -1,11 +1,18 @@
+using System.Collections.Generic;
+using Game.Client.Flow;
+using Game.Client.Scenery;
 using UnityEngine;
 
 namespace Game.Client.Battle
 {
-    // Builds the ink-wash (수묵화) battle backdrop at runtime: gradient sky, a distant backdrop,
-    // soft linear fog and a plain earthen platform. The backdrop is a painted image on a far quad
-    // that is resized every frame to cover the camera view; without an image it falls back to
-    // procedural mountain silhouettes that fade with distance.
+    // Builds the 3D surroundings of the fighters (무공 제작, 수련 and 비무 all share them) at
+    // runtime: gradient sky, a distant backdrop, soft linear fog and one of the ArenaTheme sets
+    // (floor and props). The backdrop is a painted image on a far quad that is resized every
+    // frame to cover the camera view; without an image it falls back to procedural mountain
+    // silhouettes that fade with distance.
+    //
+    // Battles pick their theme with ApplyTheme once the screen has faded to ink; every other
+    // screen returns to the workshop theme.
     public class InkWashBackground : MonoBehaviour
     {
         private struct RidgeLayer
@@ -21,6 +28,7 @@ namespace Game.Client.Battle
         private const int RidgeSegments = 180;
         private const float RidgeBottom = -20f;
 
+        [SerializeField] private GameFlowController flow;
         [SerializeField] private Shader skyShader;
         [SerializeField] private Shader unlitFogShader;
         [Tooltip("Point the backdrop is arranged around (between the fighters, on the ground).")]
@@ -29,7 +37,7 @@ namespace Game.Client.Battle
         [SerializeField] private Vector3 backDirection = Vector3.left;
 
         [Header("Backdrop Image")]
-        [Tooltip("Painted backdrop shown on a far quad. Leave empty to use procedural mountain ridges.")]
+        [Tooltip("Painted backdrop for themes that do not paint their own. Leave empty to use procedural mountain ridges.")]
         [SerializeField] private Texture2D backdropTexture;
         [Tooltip("Distance from the stage centre to the backdrop plane; farther sinks deeper into the fog.")]
         [SerializeField] private float backdropDistance = 50f;
@@ -42,60 +50,125 @@ namespace Game.Client.Battle
         [Tooltip("Extra coverage so camera moves never reveal the quad edges.")]
         [SerializeField] private float backdropMargin = 1.1f;
 
-        [Header("Sky")]
-        [SerializeField] private Color skyTopColor = Hex(0xE8E4D9);
-        [SerializeField] private Color skyHorizonColor = Hex(0xF2DEC4);
-
-        [Header("Fog")]
-        [SerializeField] private Color fogColor = Hex(0xEEE2D0);
-        [SerializeField] private float fogStart = 15f;
-        [SerializeField] private float fogEnd = 160f;
-
-        [Header("Platform")]
-        [SerializeField] private Color platformColor = Hex(0x8B7355);
-        [SerializeField] private float platformRadius = 3.5f;
-        [SerializeField] private float platformThickness = 0.2f;
-
+        private readonly Dictionary<ArenaTheme, (GameObject root, ArenaLook look)> sets = new Dictionary<ArenaTheme, (GameObject, ArenaLook)>();
+        private ArenaTheme? currentTheme;
+        private Material skyMaterial;
+        private Material backdropMaterial;
+        private Texture2D activeBackdrop;
         private Transform backdrop;
+        private GameObject mountains;
+
+        public ArenaTheme? CurrentTheme => currentTheme;
 
         private void Awake()
         {
-            ApplySky();
-            ApplyFog();
-            if (backdropTexture != null)
-                BuildBackdrop();
-            else
-                BuildMountains();
-            BuildPlatform();
+            EnsureBuilt();
+            if (currentTheme == null)
+                ApplyTheme(ArenaThemes.Workshop);
+        }
+
+        private void OnEnable()
+        {
+            if (flow != null)
+                flow.ScreenEntered += OnScreenEntered;
+        }
+
+        private void OnDisable()
+        {
+            if (flow != null)
+                flow.ScreenEntered -= OnScreenEntered;
+        }
+
+        // Battles set their own theme (after this runs); every other screen shows the workshop's.
+        private void OnScreenEntered(GameScreen screen)
+        {
+            if (screen != GameScreen.Battle)
+                ApplyTheme(ArenaThemes.Workshop);
         }
 
         private void LateUpdate()
         {
-            if (backdrop != null)
+            if (backdrop != null && backdrop.gameObject.activeSelf)
                 FitBackdrop();
         }
 
-        private void ApplySky()
+        // Shows the theme's set and applies its sky, fog and backdrop. Sets are built on first
+        // use and kept, so switching back is cheap.
+        public void ApplyTheme(ArenaTheme theme)
         {
-            Shader shader = skyShader != null ? skyShader : Shader.Find("Game/InkSkyGradient");
-            var material = new Material(shader) { name = "InkSky" };
-            material.SetColor("_TopColor", skyTopColor);
-            material.SetColor("_HorizonColor", skyHorizonColor);
-            // Ambient lighting is deliberately not regenerated so the fighters keep their current look.
-            RenderSettings.skybox = material;
+            if (currentTheme == theme)
+                return;
+            EnsureBuilt();
+
+            if (!sets.TryGetValue(theme, out var set))
+            {
+                var anchor = new GameObject(theme + "Set").transform;
+                anchor.SetParent(transform, false);
+                anchor.position = stageCenter;
+                // Sets are laid out with local -Z pointing away from the camera.
+                anchor.rotation = Quaternion.LookRotation(-backDirection.normalized, Vector3.up);
+                ArenaLook look;
+                switch (theme)
+                {
+                    case ArenaTheme.Street:
+                        StreetArena.Create(anchor, out look);
+                        break;
+                    case ArenaTheme.MountHua:
+                        MountHuaArena.Create(anchor, out look);
+                        break;
+                    default:
+                        TrainingHallArena.Create(anchor, out look);
+                        break;
+                }
+                set = (anchor.gameObject, look);
+                sets[theme] = set;
+            }
+
+            foreach (var pair in sets)
+                pair.Value.root.SetActive(pair.Key == theme);
+            currentTheme = theme;
+
+            ArenaLook l = set.look;
+            skyMaterial.SetColor("_TopColor", l.SkyTop);
+            skyMaterial.SetColor("_HorizonColor", l.SkyHorizon);
+            RenderSettings.fogColor = l.Fog;
+            RenderSettings.fogStartDistance = l.FogStart;
+            RenderSettings.fogEndDistance = l.FogEnd;
+
+            activeBackdrop = l.Backdrop != null ? l.Backdrop : backdropTexture;
+            backdrop.gameObject.SetActive(activeBackdrop != null);
+            if (activeBackdrop != null)
+            {
+                backdropMaterial.SetTexture("_BaseMap", activeBackdrop);
+                FitBackdrop();
+            }
+            else if (mountains == null)
+            {
+                BuildMountains();
+            }
+            if (mountains != null)
+                mountains.SetActive(activeBackdrop == null);
         }
 
-        private void ApplyFog()
+        // Sky, fog mode and the backdrop quad; ApplyTheme may run before Awake (another
+        // component's Awake choosing a theme), so both call this.
+        private void EnsureBuilt()
         {
+            if (skyMaterial != null)
+                return;
+            Shader shader = skyShader != null ? skyShader : Shader.Find("Game/InkSkyGradient");
+            skyMaterial = new Material(shader) { name = "InkSky" };
+            // Ambient lighting is deliberately not regenerated so the fighters keep their current look.
+            RenderSettings.skybox = skyMaterial;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = fogColor;
-            RenderSettings.fogStartDistance = fogStart;
-            RenderSettings.fogEndDistance = fogEnd;
+            BuildBackdrop();
         }
 
         private void BuildMountains()
         {
+            mountains = new GameObject("Mountains");
+            mountains.transform.SetParent(transform, false);
             // Nearest (darkest) to farthest (closest to the sky colour), like atmospheric perspective in ink painting.
             var layers = new[]
             {
@@ -112,7 +185,7 @@ namespace Game.Client.Battle
             {
                 RidgeLayer layer = layers[i];
                 var go = new GameObject("MountainLayer" + i);
-                go.transform.SetParent(transform, false);
+                go.transform.SetParent(mountains.transform, false);
                 go.transform.position = stageCenter + back * layer.Distance;
                 go.transform.rotation = Quaternion.LookRotation(side, Vector3.up);
 
@@ -168,14 +241,11 @@ namespace Game.Client.Battle
             go.transform.rotation = Quaternion.LookRotation(backDirection.normalized, Vector3.up);
 
             Shader shader = unlitFogShader != null ? unlitFogShader : Shader.Find("Game/InkUnlitFog");
-            var material = new Material(shader) { name = "InkBackdrop" };
-            material.SetColor("_BaseColor", Color.white);
-            material.SetTexture("_BaseMap", backdropTexture);
+            backdropMaterial = new Material(shader) { name = "InkBackdrop" };
+            backdropMaterial.SetColor("_BaseColor", Color.white);
             go.AddComponent<MeshFilter>().sharedMesh = BuildUnitQuad();
-            go.AddComponent<MeshRenderer>().sharedMaterial = material;
-
+            go.AddComponent<MeshRenderer>().sharedMaterial = backdropMaterial;
             backdrop = go.transform;
-            FitBackdrop();
         }
 
         // Positions and scales the backdrop so it covers the camera view at the backdrop plane
@@ -198,7 +268,7 @@ namespace Game.Client.Battle
             Vector3 viewCentre = camPos + cam.transform.forward * (depth / facing);
             float viewHeight = 2f * depth * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
             float viewWidth = viewHeight * cam.aspect;
-            float imageAspect = backdropTexture.width / (float)backdropTexture.height;
+            float imageAspect = activeBackdrop.width / (float)activeBackdrop.height;
 
             // Tall enough that the vertical focus point can sit at the view centre with both edges covered.
             float coverHeight = viewHeight / (2f * Mathf.Min(backdropFocusV, 1f - backdropFocusV));
@@ -226,22 +296,6 @@ namespace Game.Client.Battle
             mesh.triangles = new[] { 0, 2, 1, 2, 3, 1 };
             mesh.RecalculateBounds();
             return mesh;
-        }
-
-        private void BuildPlatform()
-        {
-            GameObject platform = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            platform.name = "Platform";
-            Destroy(platform.GetComponent<Collider>());
-            platform.transform.SetParent(transform, false);
-            platform.transform.position = stageCenter + Vector3.down * (platformThickness * 0.5f);
-            // Unity's cylinder is 1 unit wide and 2 units tall.
-            platform.transform.localScale = new Vector3(platformRadius * 2f, platformThickness * 0.5f, platformRadius * 2f);
-
-            var renderer = platform.GetComponent<MeshRenderer>();
-            var material = new Material(renderer.sharedMaterial) { name = "InkPlatform" };
-            material.SetColor("_BaseColor", platformColor);
-            renderer.sharedMaterial = material;
         }
 
         private static Color Hex(int rgb)

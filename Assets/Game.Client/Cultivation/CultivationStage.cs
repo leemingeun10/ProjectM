@@ -6,7 +6,7 @@ using UnityEngine.Playables;
 namespace Game.Client.Cultivation
 {
     // The 3D part of the 단련 screen: a private rig far from the battle stage with its own copy of
-    // the character, a camera rendering into a RenderTexture (shown by a RawImage), a floor, the
+    // the character, a camera rendering into a RenderTexture (shown by a RawImage), the 수련장 set, the
     // 목각인형 prop and the qi effect. The Animator is driven by a PlayableGraph (no controller
     // asset): a looping seated idle, and one-shot drills that cross-fade in and back out to it.
     public class CultivationStage
@@ -45,18 +45,12 @@ namespace Game.Client.Cultivation
         public QiAuraEffect Qi { get; }
         public bool IsPlayingAction => actionActive || actionWeight > 0f;
 
-        public CultivationStage(GameObject characterPrefab, AnimationClip idleClip, Color background, Color floorColor)
+        public CultivationStage(GameObject characterPrefab, AnimationClip idleClip, Color background)
         {
             root = new GameObject("CultivationStage");
             root.transform.position = Origin;
 
-            GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            floor.name = "Floor";
-            UnityEngine.Object.Destroy(floor.GetComponent<Collider>());
-            floor.transform.SetParent(root.transform, false);
-            floor.transform.localPosition = new Vector3(0f, -0.02f, 0f);
-            floor.transform.localScale = new Vector3(3.2f, 0.02f, 3.2f);
-            floor.GetComponent<Renderer>().material.color = floorColor;
+            TrainingGround.Create(root.transform, CameraYaw);
 
             dummy = WoodenDummy.Create(root.transform, new Vector3(0f, 0f, DummyDistance));
             dummy.SetActive(false);
@@ -79,7 +73,7 @@ namespace Game.Client.Cultivation
             camera.backgroundColor = background;
             camera.fieldOfView = 36f;
             camera.nearClipPlane = 0.1f;
-            camera.farClipPlane = 30f;
+            camera.farClipPlane = 50f;
             camera.targetTexture = Texture;
             PlaceCamera(0f, Vector3.zero);
 
