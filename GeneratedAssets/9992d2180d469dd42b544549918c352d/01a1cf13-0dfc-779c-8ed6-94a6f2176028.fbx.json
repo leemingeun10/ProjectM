@@ -1,0 +1,12 @@
+{
+    "asset": "9992d2180d469dd42b544549918c352d",
+    "fileName": "01a1cf13-0dfc-779c-8ed6-94a6f2176028.fbx",
+    "prompt": "A swordsman performs one fast forward sword thrust: brief wind-up pulling the sword hand to the hip, a sharp lunge with the sword extended straight forward at chest height, hold briefly, recover to ready stance.",
+    "negativePrompt": "",
+    "model": "uthana-text-to-motion-3",
+    "modelName": "Uthana Text to Motion 3.0",
+    "customSeed": 62986610,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

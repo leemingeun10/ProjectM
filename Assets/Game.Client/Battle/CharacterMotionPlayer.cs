@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.Client.Battle
 {
-    // Plays a sequence of action clips (Slash/Thrust/Guard) on one character, then returns to Idle.
+    // Plays a sequence of action clips (see CombatClipSelector) on one character, then returns to Idle.
     // A new request mid-sequence restarts from the new sequence. The sword trail emits only while
     // an action sequence is playing.
     //
@@ -14,8 +14,12 @@ namespace Game.Client.Battle
     {
         public const string IdleState = "Idle";
         public const string SlashState = "Slash";
-        public const string ThrustState = "Thrust";
         public const string GuardState = "Guard";
+
+        // Combat clips are cut from longer AI takes and neither start nor end in the Idle pose, so
+        // every change of state blends over this long. Clip time still starts at 0 when Play is
+        // called, so a clip's strike frame lands at the same moment it would with a hard cut.
+        private const float CrossFadeSeconds = 0.12f;
 
         [SerializeField] private TrailRenderer swordTrail;
 
@@ -113,7 +117,7 @@ namespace Game.Client.Battle
             SetTrail(true);
             foreach (string state in states)
             {
-                animator.Play(state, 0, 0f);
+                animator.CrossFadeInFixedTime(state, CrossFadeSeconds, 0, 0f);
                 float length = GetClipLength(state);
                 float elapsed = 0f;
                 while (elapsed < length)
@@ -123,7 +127,7 @@ namespace Game.Client.Battle
                 }
             }
 
-            animator.Play(IdleState, 0, 0f);
+            animator.CrossFadeInFixedTime(IdleState, CrossFadeSeconds, 0, 0f);
             SetTrail(false);
             playRoutine = null;
         }

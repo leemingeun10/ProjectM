@@ -11,7 +11,7 @@ namespace Game.Client.Battle
 {
     // Plays back an already-computed BattleResult turn by turn. Presentation only: the result
     // is never modified, and all float/timing work stays on this side of the Game.sim boundary.
-    // Each turn also starts characters A and B on the motion for their BattleStepType; the clip
+    // Each turn also starts characters A and B on the motion CombatClipSelector picks; the clip
     // speed follows the replay speed and freezes while paused.
     // Lives on the battle screen: when the replay ends a result panel offers "다시 보기" and
     // "홈으로", and leaving the battle screen by any route closes the replay.
@@ -216,8 +216,8 @@ namespace Game.Client.Battle
                 descriptionText.text = TurnNarrator.Describe(e);
                 strokeComparison.Show(StepAt(currentStepsA, e.TurnIndex), StepAt(currentStepsB, e.TurnIndex), e.TypeA, e.TypeB);
                 strokeComparison.SetReveal(0f);
-                characterA.Play(MotionStateFor(e.TypeA));
-                characterB.Play(MotionStateFor(e.TypeB));
+                characterA.Play(CombatClipSelector.StateFor(e.TypeA, StepAt(currentStepsA, e.TurnIndex)?.RawPoints));
+                characterB.Play(CombatClipSelector.StateFor(e.TypeB, StepAt(currentStepsB, e.TurnIndex)?.RawPoints));
                 cameraRig.SetFocused(true);
                 bool impactShown = false;
 
@@ -289,17 +289,6 @@ namespace Game.Client.Battle
         {
             characterA.PlaybackSpeed = motionSpeed;
             characterB.PlaybackSpeed = motionSpeed;
-        }
-
-        // Counter maps to Guard regardless of whether the counter landed; hit reactions come later.
-        private static string MotionStateFor(BattleStepType type)
-        {
-            switch (type)
-            {
-                case BattleStepType.Thrust: return CharacterMotionPlayer.ThrustState;
-                case BattleStepType.Counter: return CharacterMotionPlayer.GuardState;
-                default: return CharacterMotionPlayer.SlashState;
-            }
         }
 
         private void SetHp(float hpA, float hpB)

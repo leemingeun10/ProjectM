@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using Game.Client.Stroke;
 using Game.Client.Technique;
+using Game.Sim.Battle;
 using Game.Sim.Stroke;
 using UnityEngine;
 
 namespace Game.Client.Battle
 {
-    // Drawing preview: plays the Slash/Thrust motion matching a completed stroke on character A.
+    // Drawing preview: plays the motion a completed stroke would fight with (CombatClipSelector) on character A.
     // A new stroke mid-swing restarts playback from the new clip.
     //
     // When the counter toggle is on, plays Guard -> Slash instead. This is only a preview of the
@@ -50,7 +51,8 @@ namespace Game.Client.Battle
             if (sequenceController.IsCounterOn)
                 motionPlayer.Play(CharacterMotionPlayer.GuardState, CharacterMotionPlayer.SlashState);
             else
-                motionPlayer.Play(result.Type == StrokeType.Thrust ? CharacterMotionPlayer.ThrustState : CharacterMotionPlayer.SlashState);
+                motionPlayer.Play(CombatClipSelector.StateFor(
+                    result.Type == StrokeType.Thrust ? BattleStepType.Thrust : BattleStepType.Slash, points));
         }
     }
 }
