@@ -11,12 +11,13 @@ namespace Game.Sim.Technique
     // so Game.sim stays dependency-free, and every Fixed is written as its raw long so a
     // save/load round trip is bit-exact (a float detour would break determinism).
     //
-    // Schema v2 (current):
+    // Schema v3 (current):
     // {
-    //   "version": 2,
+    //   "version": 3,
     //   "steps": [
     //     {
     //       "turnIndex": 0, "isCounter": false,
+    //       "hiddenTechnique": "triangle", "hiddenMove": "Thrust",  (hidden turns only)
     //       "strokeType": "Slash",
     //       "length": <raw>, "startDirectionX": <raw>, "startDirectionY": <raw>,
     //       "endDirectionX": <raw>, "endDirectionY": <raw>,          (Slash only)
@@ -26,11 +27,17 @@ namespace Game.Sim.Technique
     //   ]
     // }
     //
-    // Schema v1 is identical plus a per-step "stance" string. The stance system was removed,
-    // so v1 files are still accepted and their "stance" field is ignored.
+    // A hidden turn has both hidden fields, an ordinary turn neither. hiddenMove is
+    // "HorizontalSlash", "VerticalSlash" or "Thrust". A step with only one of them, an id that isn't
+    // an active hidden technique, or a hidden counter is rejected (HiddenTechniques.Check).
+    //
+    // Schema v2 is v3 without hidden turns: every v2 step loads as an ordinary turn (hidden fields,
+    // if any, are ignored). Schema v1 is v2 plus a per-step "stance" string. The stance system was
+    // removed, so v1 files are still accepted and their "stance" field is ignored.
     public static class TechniqueJsonSerializer
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
+        public const int NoHiddenVersion = 2;
         public const int LegacyStanceVersion = 1;
 
         public static string Serialize(TechniqueBuilder builder)
@@ -70,14 +77,15 @@ namespace Game.Sim.Technique
             Dictionary<string, object> rootObj = AsObject(root, "root");
 
             long version = GetLong(rootObj, "version", "root");
-            if (version != CurrentVersion && version != LegacyStanceVersion)
+            if (version != CurrentVersion && version != NoHiddenVersion && version != LegacyStanceVersion)
                 throw new TechniqueJsonException(
-                    $"Unsupported technique JSON version {version} (supported: {LegacyStanceVersion}, {CurrentVersion}).");
+                    $"Unsupported technique JSON version {version} (supported: {LegacyStanceVersion}, {NoHiddenVersion}, {CurrentVersion}).");
 
+            bool readHidden = version >= CurrentVersion;
             List<object> stepArray = AsArray(GetRequired(rootObj, "steps", "root"), "steps");
             var steps = new List<TechniqueStep>(stepArray.Count);
             for (int i = 0; i < stepArray.Count; i++)
-                steps.Add(ReadStep(AsObject(stepArray[i], $"steps[{i}]"), $"steps[{i}]"));
+                steps.Add(ReadStep(AsObject(stepArray[i], $"steps[{i}]"), $"steps[{i}]", readHidden));
 
             return ((int)version, steps);
         }
@@ -91,6 +99,11 @@ namespace Game.Sim.Technique
             sb.Append("    {\n");
             WriteField(sb, "turnIndex", step.TurnIndex.ToString(CultureInfo.InvariantCulture));
             WriteField(sb, "isCounter", step.IsCounter ? "true" : "false");
+            if (step.IsHidden)
+            {
+                WriteField(sb, "hiddenTechnique", Quote(step.HiddenTechniqueId));
+                WriteField(sb, "hiddenMove", Quote(HiddenMoveToString(step.HiddenMove)));
+            }
             WriteField(sb, "strokeType", Quote(StrokeTypeToString(stroke.Type)));
 
             if (stroke.Type == StrokeType.Slash)
@@ -123,7 +136,8 @@ namespace Game.Sim.Technique
 
         private static string RawString(Fixed value) => value.Raw.ToString(CultureInfo.InvariantCulture);
 
-        // Only enum names (plain ASCII identifiers) are quoted, so no escaping is needed.
+        // Only enum names and hidden-technique ids (plain ASCII identifiers) are quoted, so no
+        // escaping is needed.
         private static string Quote(string s) => "\"" + s + "\"";
 
         // Explicit mapping instead of Enum.ToString/Parse: renaming an enum member must not
@@ -138,9 +152,20 @@ namespace Game.Sim.Technique
             }
         }
 
+        private static string HiddenMoveToString(HiddenTechniqueMove move)
+        {
+            switch (move)
+            {
+                case HiddenTechniqueMove.HorizontalSlash: return "HorizontalSlash";
+                case HiddenTechniqueMove.VerticalSlash: return "VerticalSlash";
+                case HiddenTechniqueMove.Thrust: return "Thrust";
+                default: throw new ArgumentOutOfRangeException(nameof(move), move, null);
+            }
+        }
+
         // ---- Reading ----
 
-        private static TechniqueStep ReadStep(Dictionary<string, object> obj, string path)
+        private static TechniqueStep ReadStep(Dictionary<string, object> obj, string path, bool readHidden)
         {
             long turnIndex = GetLong(obj, "turnIndex", path);
             if (turnIndex < 0 || turnIndex > int.MaxValue)
@@ -176,7 +201,31 @@ namespace Game.Sim.Technique
                 points[i] = new StrokePoint(GetLong(p, "x", pointPath), GetLong(p, "y", pointPath));
             }
 
-            return new TechniqueStep((int)turnIndex, isCounter, stroke, points);
+            string hiddenId = null;
+            HiddenTechniqueMove hiddenMove = HiddenTechniqueMove.None;
+            if (readHidden)
+            {
+                if (obj.ContainsKey("hiddenTechnique"))
+                    hiddenId = GetString(obj, "hiddenTechnique", path);
+                if (obj.ContainsKey("hiddenMove"))
+                    hiddenMove = ParseHiddenMove(GetString(obj, "hiddenMove", path), path);
+                TechniqueAddResult check = HiddenTechniques.Check(isCounter, hiddenId, hiddenMove);
+                if (check != TechniqueAddResult.Success)
+                    throw new TechniqueJsonException($"{path} has an invalid hidden technique ({check}).");
+            }
+
+            return new TechniqueStep((int)turnIndex, isCounter, stroke, points, hiddenId, hiddenMove);
+        }
+
+        private static HiddenTechniqueMove ParseHiddenMove(string name, string path)
+        {
+            switch (name)
+            {
+                case "HorizontalSlash": return HiddenTechniqueMove.HorizontalSlash;
+                case "VerticalSlash": return HiddenTechniqueMove.VerticalSlash;
+                case "Thrust": return HiddenTechniqueMove.Thrust;
+                default: throw new TechniqueJsonException($"{path}.hiddenMove has unknown value \"{name}\".");
+            }
         }
 
         private static object GetRequired(Dictionary<string, object> obj, string key, string path)

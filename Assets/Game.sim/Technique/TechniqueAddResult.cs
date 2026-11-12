@@ -4,6 +4,12 @@ namespace Game.Sim.Technique
     {
         Success,
         SequenceFull,
-        CounterLimitReached
+        CounterLimitReached,
+        // Hidden-technique turns (see HiddenTechniques.Check). Any of these means the shape can
+        // still be saved as an ordinary turn instead.
+        UnknownHiddenTechnique,
+        HiddenTechniqueMoveMismatch,
+        HiddenTechniqueOnCounter,
+        NotEnoughInternalPower
     }
 }

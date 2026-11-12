@@ -8,6 +8,10 @@ namespace Game.Sim.Battle
 {
     // Resolves two 10-turn technique sequences against each other, turn i vs turn i.
     // Pure function of its inputs: no RNG, no clock, integer/Fixed math only.
+    //
+    // A hidden-technique turn fights as its chosen move (GetStepType) on its drawn points, and
+    // whatever damage it lands is scaled by its bonus (HiddenTechniques.ScaleDamage). Matchups and
+    // their outcomes are otherwise exactly those of ordinary turns.
     public static class BattleSimulator
     {
         public const int TurnsPerBattle = TechniqueBuilder.MaxTurns;
@@ -29,6 +33,9 @@ namespace Game.Sim.Battle
                 BattleStepType typeB = GetStepType(b);
 
                 (int damageToA, int damageToB, TurnReason reason) = ResolveTurn(typeA, a, typeB, b);
+                // Damage to one side is always dealt by the other side's turn.
+                damageToA = HiddenTechniques.ScaleDamage(damageToA, b);
+                damageToB = HiddenTechniques.ScaleDamage(damageToB, a);
                 hpA -= damageToA;
                 hpB -= damageToB;
                 events.Add(new TurnEvent(turn, typeA, typeB, damageToA, damageToB, reason, hpA, hpB));
@@ -44,13 +51,23 @@ namespace Game.Sim.Battle
         {
             if (step.IsCounter)
                 return BattleStepType.Counter;
+            // The chosen move overrides the analyzer: a triangle is closed, so it always analyses
+            // as a Thrust, but a hidden turn saved as a cut fights as a Slash.
+            if (step.IsHidden)
+                return step.HiddenMove == HiddenTechniqueMove.Thrust ? BattleStepType.Thrust : BattleStepType.Slash;
             return step.Stroke.Type == StrokeType.Thrust ? BattleStepType.Thrust : BattleStepType.Slash;
         }
 
+        // Base damage of a turn fighting as a Thrust, before any hidden-technique bonus.
         public static int ThrustDamage(TechniqueStep thrustStep)
         {
+            // A hidden Thrust whose shape didn't close (analysed as a Slash, so no stored area) is
+            // measured as the closed polygon of its points instead.
+            Fixed areaFixed = thrustStep.Stroke.Type == StrokeType.Thrust
+                ? thrustStep.Stroke.Area
+                : StrokeAnalyzer.ClosedArea(thrustStep.RawPoints);
             // Area is in whole sim units (canvas px^2); Raw carries Fixed.Scale extra digits.
-            long area = thrustStep.Stroke.Area.Raw / Fixed.Scale;
+            long area = areaFixed.Raw / Fixed.Scale;
             long damage = IntegerMath.IntegerSqrt(area) / BattleConstants.ThrustSqrtDivisor;
             return damage > int.MaxValue ? int.MaxValue : (int)damage;
         }
@@ -115,6 +132,9 @@ namespace Game.Sim.Battle
             {
                 if (steps[i].TurnIndex != i)
                     throw new ArgumentException($"Step at position {i} has TurnIndex {steps[i].TurnIndex}; steps must be ordered by turn.", paramName);
+                TechniqueAddResult hidden = HiddenTechniques.Check(steps[i]);
+                if (hidden != TechniqueAddResult.Success)
+                    throw new ArgumentException($"Step at position {i} has an invalid hidden technique ({hidden}).", paramName);
             }
         }
     }

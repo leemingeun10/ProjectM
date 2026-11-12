@@ -17,10 +17,12 @@ namespace Game.Client.Technique
     // Saved turns are listed with a delete button each.
     //
     // Cultivation: 외공 sets the stroke length cap. When a turn is saved, its drawn shape is matched
-    // against the hidden-technique templates; a match is activated if the sequence still has the
-    // 내공 for it. 내공 here is a per-sequence budget (the trained InternalPower, minus what this
-    // sequence's activated turns cost; deleting such a turn refunds it), never written back to the
-    // save. Activation is only logged and tagged on the turn row for now: it has no battle effect yet.
+    // against the active hidden-technique templates (ShapeTemplates.Active); a match is activated if
+    // the sequence still has the 내공 for it (HiddenTechniques costs). 내공 here is a per-sequence
+    // budget (the trained InternalPower, minus what this sequence's activated turns cost; deleting
+    // such a turn refunds it), never written back to the save. Activation is only logged and tagged
+    // on the turn row for now: the turn is saved as an ordinary one, because choosing the hidden
+    // move (TechniqueBuilder's hidden TryAddStep) has no UI yet.
     public class TechniqueSequenceController : MonoBehaviour
     {
         [SerializeField] private StrokeInputController strokeInput;
@@ -93,6 +95,7 @@ namespace Game.Client.Technique
         {
             cultivation = stats;
             strokeInput.MaxStrokeLengthCm = CultivationBattleRules.MaxStrokeLength(stats.ExternalPower);
+            builder.InternalPower = stats.InternalPower;
             UpdateUi();
         }
 
@@ -119,7 +122,7 @@ namespace Game.Client.Technique
             counterToggle.isOn = false;
             foreach (TechniqueStep step in steps)
             {
-                if (builder.TryAddStep(step.IsCounter, step.Stroke, step.RawPoints) != TechniqueAddResult.Success)
+                if (builder.TryAddStep(step.IsCounter, step.Stroke, step.RawPoints, step.HiddenTechniqueId, step.HiddenMove) != TechniqueAddResult.Success)
                 {
                     Debug.LogWarning($"[Technique] 저장된 스텝 {step.TurnIndex + 1}을 복원하지 못해 이후 스텝은 무시됩니다.");
                     break;
@@ -202,8 +205,8 @@ namespace Game.Client.Technique
         // null when it matches nothing or the sequence lacks the 내공 (then it is an ordinary turn).
         private string TryActivateHidden(int turnNumber)
         {
-            ShapeMatchResult? match = ShapeRecognizer.Recognize(pendingShape, ShapeTemplates.All, ShapeRecognizer.DefaultThreshold);
-            if (match == null)
+            ShapeMatchResult? match = ShapeRecognizer.Recognize(pendingShape, ShapeTemplates.Active, ShapeRecognizer.DefaultThreshold);
+            if (match == null || !HiddenTechniques.TryGetActive(match.Value.TemplateId, out HiddenTechniqueDefinition hidden))
             {
                 notice = $"턴 {turnNumber}: 일반 공격으로 저장 (무공 모양 아님)";
                 return null;
@@ -211,14 +214,14 @@ namespace Game.Client.Technique
 
             string name = HiddenTechniqueNames.Of(match.Value.TemplateId);
             int before = RemainingInternalPower();
-            (bool activated, int remaining) = CultivationBattleRules.TryActivateHiddenTechnique(
-                before, match.Value, CultivationBattleRules.HiddenTechniqueCosts);
-            if (!activated)
+            if (before < hidden.InternalPowerCost)
             {
                 Debug.Log($"[Hidden] 턴 {turnNumber}: [{name}] 모양이지만 내공이 부족해 일반 공격으로 처리합니다 (점수 {match.Value.Score}, 내공 {before}).");
-                notice = $"턴 {turnNumber}: [{name}] 내공 부족 ({before}/{CultivationBattleRules.HiddenTechniqueCosts[match.Value.TemplateId]}) → 일반 공격";
+                notice = $"턴 {turnNumber}: [{name}] 내공 부족 ({before}/{hidden.InternalPowerCost}) → 일반 공격";
                 return null;
             }
+
+            int remaining = before - hidden.InternalPowerCost;
 
             Debug.Log($"[Hidden] 턴 {turnNumber}: [{name}] 인식됨! (점수 {match.Value.Score}, 내공 {before} → {remaining})");
             notice = $"턴 {turnNumber}: [{name}] 인식됨!  내공 {before} → {remaining}";
@@ -234,12 +237,12 @@ namespace Game.Client.Technique
             string passed = null, closest = null;
             int passedScore = -1, closestScore = -1;
             var seen = new HashSet<string>();
-            foreach (ShapeTemplate template in ShapeTemplates.All)
+            foreach (ShapeTemplate template in ShapeTemplates.Active)
             {
                 if (!seen.Add(template.Id))
                     continue;
                 var variants = new List<ShapeTemplate>();
-                foreach (ShapeTemplate t in ShapeTemplates.All)
+                foreach (ShapeTemplate t in ShapeTemplates.Active)
                 {
                     if (t.Id == template.Id)
                         variants.Add(t);
@@ -283,8 +286,8 @@ namespace Game.Client.Technique
             int remaining = cultivation.InternalPower;
             foreach (string templateId in hiddenByTurn)
             {
-                if (templateId != null)
-                    remaining -= CultivationBattleRules.HiddenTechniqueCosts[templateId];
+                if (templateId != null && HiddenTechniques.TryGetActive(templateId, out HiddenTechniqueDefinition hidden))
+                    remaining -= hidden.InternalPowerCost;
             }
             return remaining;
         }

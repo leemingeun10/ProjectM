@@ -69,6 +69,11 @@ namespace Game.Sim.Stroke
             return false;
         }
 
+        // Area enclosed by the points taken as a closed polygon (last point joined to the first),
+        // the same measure a Thrust's Area uses. Zero for fewer than 3 points.
+        public static Fixed ClosedArea(IReadOnlyList<StrokePoint> points)
+            => points == null || points.Count < 3 ? Fixed.Zero : ShoelaceArea(points);
+
         private static Fixed PathLength(IReadOnlyList<StrokePoint> points)
         {
             Fixed length = Fixed.Zero;

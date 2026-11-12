@@ -62,6 +62,8 @@ namespace Game.Tests
                 Assert.AreEqual(e.Stroke.EndDirectionX.Raw, a.Stroke.EndDirectionX.Raw, at + " endDirectionX");
                 Assert.AreEqual(e.Stroke.EndDirectionY.Raw, a.Stroke.EndDirectionY.Raw, at + " endDirectionY");
                 Assert.AreEqual(e.Stroke.Area.Raw, a.Stroke.Area.Raw, at + " area");
+                Assert.AreEqual(e.HiddenTechniqueId, a.HiddenTechniqueId, at + " hiddenTechnique");
+                Assert.AreEqual(e.HiddenMove, a.HiddenMove, at + " hiddenMove");
 
                 Assert.AreEqual(e.RawPoints.Count, a.RawPoints.Count, at + " rawPoints count");
                 for (int j = 0; j < e.RawPoints.Count; j++)
@@ -85,12 +87,12 @@ namespace Game.Tests
         }
 
         [Test]
-        public void Version_IsWrittenAndParsedAsTwo()
+        public void Version_IsWrittenAndParsedAsThree()
         {
             string json = TechniqueJsonSerializer.Serialize(BuildMixedBuilder());
 
-            StringAssert.Contains("\"version\": 2", json);
-            Assert.AreEqual(2, TechniqueJsonSerializer.Deserialize(json).version);
+            StringAssert.Contains("\"version\": 3", json);
+            Assert.AreEqual(3, TechniqueJsonSerializer.Deserialize(json).version);
         }
 
         [Test]
@@ -122,7 +124,7 @@ namespace Game.Tests
         [Test]
         public void UnsupportedVersion_Throws()
         {
-            Assert.Throws<TechniqueJsonException>(() => TechniqueJsonSerializer.Deserialize("{\"version\": 3, \"steps\": []}"));
+            Assert.Throws<TechniqueJsonException>(() => TechniqueJsonSerializer.Deserialize("{\"version\": 4, \"steps\": []}"));
             Assert.Throws<TechniqueJsonException>(() => TechniqueJsonSerializer.Deserialize("{\"version\": 0, \"steps\": []}"));
             Assert.Throws<TechniqueJsonException>(() => TechniqueJsonSerializer.Deserialize("{\"steps\": []}"));
         }

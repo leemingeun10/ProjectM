@@ -151,6 +151,11 @@ namespace Game.Sim.Shape
         public static readonly ShapeTemplate CrescentThin = new ShapeTemplate(CrescentId, CrescentThinPoints);
 
         // Several templates may share an Id (variants of one shape); Recognize reports the Id.
+        // Every built-in shape, including those of inactive hidden techniques (tests use these).
         public static readonly ShapeTemplate[] All = { Triangle, Flower, SwordShort, SwordLong, CrescentFull, CrescentThin };
+
+        // The shapes the game recognises: those of active hidden techniques (HiddenTechniques).
+        // 매화/제왕/월영 stay in All but are inactive for now, so only 삼재 (Triangle) is here.
+        public static readonly ShapeTemplate[] Active = { Triangle };
     }
 }
