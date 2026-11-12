@@ -27,6 +27,11 @@ namespace Game.Client.Battle
         public const string ThrustState = "Combat_Thrust";
         public const string SlashLeftToRightState = "Combat_SlashLR";
 
+        // Temporary setting for reviewing the new clips: when false, slash directions without a
+        // combat clip of their own play Combat_SlashLR instead of the original Slash. Set true to
+        // bring back the legacy Slash (its Animator state is kept for that).
+        public static bool UseLegacySlashFallback { get; set; } = false;
+
         // |dx| >= |dy| is horizontal; a stroke with no displacement (or fewer than 2 points)
         // counts as LeftToRight.
         public static SlashDirection DirectionOf(IReadOnlyList<StrokePoint> points)
@@ -42,7 +47,7 @@ namespace Game.Client.Battle
         }
 
         // Counter maps to Guard regardless of whether the counter landed. Slash directions without
-        // a combat clip yet fall back to the original Slash.
+        // a combat clip yet fall back per UseLegacySlashFallback.
         public static string StateFor(BattleStepType type, IReadOnlyList<StrokePoint> points)
         {
             switch (type)
@@ -52,9 +57,11 @@ namespace Game.Client.Battle
                 case BattleStepType.Counter:
                     return CharacterMotionPlayer.GuardState;
                 default:
-                    return DirectionOf(points) == SlashDirection.LeftToRight
-                        ? SlashLeftToRightState
-                        : CharacterMotionPlayer.SlashState;
+                    if (DirectionOf(points) == SlashDirection.LeftToRight)
+                        return SlashLeftToRightState;
+                    // TODO(Phase 2a): pick Combat_SlashRL / Combat_SlashDown / Combat_SlashUp per
+                    // direction once those clips exist; Combat_SlashLR stands in for all of them.
+                    return UseLegacySlashFallback ? CharacterMotionPlayer.SlashState : SlashLeftToRightState;
             }
         }
     }

@@ -48,15 +48,50 @@ namespace Game.Tests
             Assert.AreEqual(SlashDirection.LeftToRight, CombatClipSelector.DirectionOf(Stroke(2, 2, 2, 2)));
         }
 
-        [Test]
-        public void StateFor_MapsTypeAndDirection()
+        private bool savedFallback;
+
+        [SetUp]
+        public void SaveFallback() => savedFallback = CombatClipSelector.UseLegacySlashFallback;
+
+        [TearDown]
+        public void RestoreFallback() => CombatClipSelector.UseLegacySlashFallback = savedFallback;
+
+        // Right to left, top to bottom, bottom to top: the directions with no combat clip yet.
+        private static readonly StrokePoint[][] DirectionsWithoutClip =
         {
+            Stroke(3, 0, -3, 0), Stroke(0, 3, 0, -3), Stroke(0, -3, 0, 3),
+        };
+
+        // Every test restores the flag in TearDown, so this sees the value the game starts with.
+        [Test]
+        public void FallbackIsOffByDefault()
+            => Assert.IsFalse(CombatClipSelector.UseLegacySlashFallback);
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void StateFor_ThrustCounterAndLeftToRight_IgnoreFallback(bool fallback)
+        {
+            CombatClipSelector.UseLegacySlashFallback = fallback;
             Assert.AreEqual(CombatClipSelector.ThrustState, CombatClipSelector.StateFor(BattleStepType.Thrust, Stroke(3, 0, -3, 0)));
             Assert.AreEqual(CharacterMotionPlayer.GuardState, CombatClipSelector.StateFor(BattleStepType.Counter, Stroke(-3, 0, 3, 0)));
             Assert.AreEqual(CombatClipSelector.SlashLeftToRightState, CombatClipSelector.StateFor(BattleStepType.Slash, Stroke(-3, 0, 3, 0)));
-            // Directions without their own clip yet keep the original Slash.
-            Assert.AreEqual(CharacterMotionPlayer.SlashState, CombatClipSelector.StateFor(BattleStepType.Slash, Stroke(3, 0, -3, 0)));
-            Assert.AreEqual(CharacterMotionPlayer.SlashState, CombatClipSelector.StateFor(BattleStepType.Slash, Stroke(0, 3, 0, -3)));
+        }
+
+        [Test]
+        public void StateFor_FallbackOff_EverySlashPlaysLeftToRightClip()
+        {
+            CombatClipSelector.UseLegacySlashFallback = false;
+            foreach (StrokePoint[] stroke in DirectionsWithoutClip)
+                Assert.AreEqual(CombatClipSelector.SlashLeftToRightState, CombatClipSelector.StateFor(BattleStepType.Slash, stroke));
+            Assert.AreEqual(CombatClipSelector.SlashLeftToRightState, CombatClipSelector.StateFor(BattleStepType.Slash, Stroke(2, 2, 2, 2)));
+        }
+
+        [Test]
+        public void StateFor_FallbackOn_DirectionsWithoutClipKeepLegacySlash()
+        {
+            CombatClipSelector.UseLegacySlashFallback = true;
+            foreach (StrokePoint[] stroke in DirectionsWithoutClip)
+                Assert.AreEqual(CharacterMotionPlayer.SlashState, CombatClipSelector.StateFor(BattleStepType.Slash, stroke));
         }
     }
 }
