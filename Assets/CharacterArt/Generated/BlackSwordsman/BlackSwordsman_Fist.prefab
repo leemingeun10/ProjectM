@@ -158,6 +158,10 @@ PrefabInstance:
       propertyPath: 'm_Bones.Array.data[44]'
       value: 
       objectReference: {fileID: 6127444977813339269}
+    - target: {fileID: 5276116584419042982, guid: 72baf801f2f36a9468948c5348798261, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 42062aa63d03ba14d81e08fe0d5484c2, type: 2}
     - target: {fileID: 7280757890411076456, guid: 72baf801f2f36a9468948c5348798261, type: 3}
       propertyPath: m_Name
       value: BlackSwordsman_Fist

@@ -158,6 +158,10 @@ PrefabInstance:
       propertyPath: 'm_Bones.Array.data[44]'
       value: 
       objectReference: {fileID: 173391306390555924}
+    - target: {fileID: 1135440929467149024, guid: 97018d5039cf8bc4b9cf647e521a13e3, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 1f62e019f71f1bd46a2843048758945b, type: 2}
     - target: {fileID: 4830427599496338189, guid: 97018d5039cf8bc4b9cf647e521a13e3, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

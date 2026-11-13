@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Game.Client.Flow;
 using UnityEngine;
-using UnityEngine.Animations.Rigging;
 
 namespace Game.Client.Battle
 {
@@ -22,6 +21,8 @@ namespace Game.Client.Battle
             public EnemyLook look;
             [Tooltip("Humanoid prefab saved in its bind T-pose, root at the feet, facing +Z.")]
             public GameObject prefab;
+            [Tooltip("Raises the model (metres) so its lower sole meets the floor in Idle; retargeted AI rigs can sink a few cm.")]
+            public float heightOffset;
         }
 
         // Sword placement relative to the right hand, in the fighter's frame while the model is in
@@ -37,7 +38,6 @@ namespace Game.Client.Battle
 
         private CharacterMotionPlayer motionPlayer;
         private Animator builtInAnimator;
-        private RigBuilder builtInRig;
         private SkinnedMeshRenderer[] builtInRenderers;
         private Transform swordHome;
         private Vector3 swordHomePosition;
@@ -85,7 +85,8 @@ namespace Game.Client.Battle
             if (currentLook == look)
                 return;
 
-            GameObject prefab = PrefabFor(look);
+            LookModel model = ModelFor(look);
+            GameObject prefab = model.prefab;
             if (look != EnemyLook.Default && prefab == null)
                 Debug.LogWarning($"[CharacterModelSwitcher] '{name}' has no prefab for {look}; using the built-in model.", this);
 
@@ -95,7 +96,7 @@ namespace Game.Client.Battle
                 currentModel = null;
             }
 
-            Animator target = prefab == null ? ShowBuiltIn() : ShowPrefab(prefab);
+            Animator target = prefab == null ? ShowBuiltIn() : ShowPrefab(prefab, model.heightOffset);
             motionPlayer.UseAnimator(target);
             currentLook = look;
         }
@@ -107,7 +108,6 @@ namespace Game.Client.Battle
 
             motionPlayer = GetComponent<CharacterMotionPlayer>();
             builtInAnimator = GetComponent<Animator>();
-            builtInRig = GetComponent<RigBuilder>();
             builtInRenderers = GetComponentsInChildren<SkinnedMeshRenderer>(true);
             if (sword != null)
             {
@@ -119,14 +119,14 @@ namespace Game.Client.Battle
             }
         }
 
-        private GameObject PrefabFor(EnemyLook look)
+        private LookModel ModelFor(EnemyLook look)
         {
             foreach (LookModel model in models)
             {
                 if (model.look == look)
-                    return model.prefab;
+                    return model;
             }
-            return null;
+            return default;
         }
 
         private Animator ShowBuiltIn()
@@ -142,12 +142,12 @@ namespace Game.Client.Battle
             return builtInAnimator;
         }
 
-        private Animator ShowPrefab(GameObject prefab)
+        private Animator ShowPrefab(GameObject prefab, float heightOffset)
         {
             // Keeps the prefab's own local scale (the generated models are scaled at the root).
             currentModel = Instantiate(prefab, transform);
             currentModel.name = prefab.name;
-            currentModel.transform.localPosition = Vector3.zero;
+            currentModel.transform.localPosition = new Vector3(0f, heightOffset, 0f);
             currentModel.transform.localRotation = Quaternion.identity;
 
             var animator = currentModel.GetComponent<Animator>();
@@ -181,14 +181,12 @@ namespace Game.Client.Battle
         }
 
         // The built-in model's renderers and Animator are switched off rather than destroyed so
-        // Default can come back; its RigBuilder must follow its Animator.
+        // Default can come back.
         private void SetBuiltInVisible(bool visible)
         {
             foreach (SkinnedMeshRenderer renderer in builtInRenderers)
                 renderer.enabled = visible;
             builtInAnimator.enabled = visible;
-            if (builtInRig != null)
-                builtInRig.enabled = visible;
         }
     }
 }
