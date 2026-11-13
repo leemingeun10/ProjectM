@@ -128,6 +128,35 @@ namespace Game.Client.Battle
             transform.localRotation = baseRotation;
         }
 
+        // Drives another model's Animator from now on (CharacterModelSwitcher), keeping the
+        // playback speed. Whatever was playing stops; the new model starts in Idle.
+        public void UseAnimator(Animator next)
+        {
+            if (animator == null)
+                animator = GetComponent<Animator>();
+            if (next == null || next == animator)
+                return;
+
+            float speed = animator.speed;
+            if (playRoutine != null)
+            {
+                StopCoroutine(playRoutine);
+                playRoutine = null;
+            }
+            if (hitRoutine != null)
+            {
+                StopCoroutine(hitRoutine);
+                hitRoutine = null;
+            }
+            transform.localRotation = baseRotation;
+            SetTrail(false);
+            qi?.Stop();
+
+            animator = next;
+            animator.speed = speed;
+            animator.Play(IdleState, 0, 0f);
+        }
+
         private IEnumerator PlayThenIdle(string[] states)
         {
             SetTrail(true);

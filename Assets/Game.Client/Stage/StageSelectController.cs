@@ -59,6 +59,8 @@ namespace Game.Client.Stage
         [SerializeField] private BattleReplayController replayController;
         // Each 수련 chapter fights in its own set (ArenaThemes.ForChapter); 비무 uses its own.
         [SerializeField] private InkWashBackground scenery;
+        // The opponent's model: each chapter's enemy (EnemyLooks.ForChapter); 비무 its own.
+        [SerializeField] private CharacterModelSwitcher enemyModel;
         // Popup shared by both screens: picks among complete slots, or explains why a battle
         // cannot start (offering the way to 무공 제작).
         [SerializeField] private GameObject slotPickPanel;
@@ -378,10 +380,13 @@ namespace Game.Client.Stage
                 note = RecordClear(stageIndex);
 
             messageText.text = note ?? string.Empty;
-            ArenaTheme theme = ArenaThemes.ForChapter(StageChapters.ChapterOf(stageIndex));
+            int chapter = StageChapters.ChapterOf(stageIndex);
+            ArenaTheme theme = ArenaThemes.ForChapter(chapter);
+            EnemyLook enemy = EnemyLooks.ForChapter(chapter);
             flow.GoTo(GameScreen.Battle, () =>
             {
                 scenery.ApplyTheme(theme);
+                enemyModel.Apply(enemy);
                 replayController.StartReplay(result, playerSteps, aiSteps, note);
             });
         }
@@ -402,6 +407,7 @@ namespace Game.Client.Stage
             flow.GoTo(GameScreen.Battle, () =>
             {
                 scenery.ApplyTheme(ArenaThemes.Sparring);
+                enemyModel.Apply(EnemyLooks.Sparring);
                 replayController.StartReplay(result, playerSteps, opponentSteps, "비무", () =>
                 {
                     pvpBackend.ReportResult(result.Outcome);

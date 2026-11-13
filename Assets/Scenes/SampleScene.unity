@@ -7783,6 +7783,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f24430f0ac5ba9e4ba49682006db5dbc, type: 3}
       insertIndex: -1
       addedObject: {fileID: 594588120}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f24430f0ac5ba9e4ba49682006db5dbc, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 594588124}
   m_SourcePrefab: {fileID: 100100000, guid: f24430f0ac5ba9e4ba49682006db5dbc, type: 3}
 --- !u!1 &594588115 stripped
 GameObject:
@@ -7850,6 +7853,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e072980187f93d3499318ab932eda3b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Client::Game.Client.Temp.AnimationPreviewTester
+--- !u!114 &594588124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 594588115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa199df09c3ff764ebb538158866f6d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Client::Game.Client.Battle.CharacterModelSwitcher
+  flow: {fileID: 1382461945}
+  sword: {fileID: 1194837090}
+  models:
+  - look: 1
+    prefab: {fileID: 2325808217355632463, guid: 283722564301f8a4786236637e64ae98, type: 3}
+  - look: 2
+    prefab: {fileID: 2561486276947761668, guid: 0fccb4920f7836542b46e7c0ca9772c4, type: 3}
 --- !u!1 &610294504
 GameObject:
   m_ObjectHideFlags: 0
@@ -11183,6 +11205,7 @@ MonoBehaviour:
   messageText: {fileID: 1787175922}
   replayController: {fileID: 629779902}
   scenery: {fileID: 1497238502}
+  enemyModel: {fileID: 594588124}
   slotPickPanel: {fileID: 1072794560}
   slotPickTitle: {fileID: 1020316179}
   slotPickBody: {fileID: 1350473438}
