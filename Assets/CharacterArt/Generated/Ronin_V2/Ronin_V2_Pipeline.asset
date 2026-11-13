@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a73033935a7fbe4c9f61439dd17a149, type: 3}
+  m_Name: Ronin_V2_Pipeline
+  m_EditorClassIdentifier: CharacterPipeline.Editor::CharacterPipeline.CharacterPipelineConfig
+  modelPrefab: {fileID: 7253553377134004227, guid: 2847b85aa27a1a04fa4546e68d4e1461, type: 3}
+  animatorController: {fileID: 9100000, guid: c52acaf66a9c77e4f9922ae41dce718a, type: 2}
+  outputName: Ronin_V2
+  targetHeight: 1.744
+  smoothness: 0.15
+  maxTextureSize: 1024
+  colorFormat: 2
+  normalFormat: 0
+  paintBelt: 1
+  beltColor: {r: 0.33, g: 0.16, b: 0.11, a: 1}
+  beltBand: {x: 0.548, y: 0.595}
+  beltMaxLuminance: 0.42
+  torsoHalfWidth: 0.15
+  brightenTrousers: 1
+  trousersBand: {x: 0.06, y: 0.43}
+  trousersMaxLuminance: 0.4
+  trousersTargetLuminance: 0.38
+  trousersMaxGain: 1.6
+  weldSeamWeights: 1
+  moveHemWeights: 1
+  hemRobeMinLuminance: 0.4
+  hemTop: 0.56
+  hemBottomHipShare: 0.7
+  socketGridStep: 0.002
+  swordForwardOffset: 0.4
+  measuredHeightBeforeScale: 1.0187634
+  appliedScale: 1.7118793
+  idleHeightOffset: 0.029447334
+  socketLocalPosition: {x: 0.0021457744, y: 0.08681193, z: -0.00041225087}
+  socketLocalRotation: {x: 0.011495347, y: 0.052989304, z: -0.75795007, w: -0.65005517}
+  fistHoleThrough: 0
+  lastReport: 

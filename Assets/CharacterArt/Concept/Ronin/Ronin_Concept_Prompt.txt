@@ -1,0 +1,55 @@
+Ronin concept, pilot stage A (2026-11-14)
+=========================================
+
+Purpose: front T-pose concept for the new semi-realistic Ronin (reference for later 3D generation).
+Uses the "common generation block" from the stage-0 survey plus the Ronin character line.
+
+Call 1
+------
+Command:          GenerateImage
+Model:            gemini-3.0-pro
+Size:             1024 x 1024
+Reference image:  none (text only, so the old concept's baked shadows and open hands don't carry over)
+Negative prompt:  none (the tool has no negative-prompt parameter)
+Seed:             random (tool default)
+Save path:        Assets/CharacterArt/Concept/Ronin/Ronin_Concept_A1.png
+
+Prompt:
+Full-body front view, exact symmetrical T-pose, arms perfectly horizontal, legs straight, feet parallel shoulder-width apart. Both hands closed into loose fists as if gripping a round sword handle, thumbs wrapped over the index fingers, palms facing down, hands proportional and not oversized. Hair neatly tied in a compact topknot, solid hair mass, no loose strands. Close-fitting clothing, nothing hanging (no sash tails, ropes, ribbons, capes, long sleeves). Mid-value base colors, no pure black. Clear, evenly lit face, eyes open and visible, no shadow on the face. Stylized semi-realistic game character, matte cloth, no specular highlights, no wet or glossy look, shadowless even front lighting, albedo-like colors. Plain light gray background, entire body visible, no props, no weapon. Character: a wandering masterless swordsman (rōnin-style martial arts drifter), weathered gaunt face with short stubble, plain worn wrap-style robe in faded earthy gray-brown, one saturated accent: a tightly tied rust-red waist band with no hanging ends.
+
+Words kept out of the prompt:
+low-poly, faceted, flat-shaded, simplified face, mitten, fingers together, dramatic lighting, dusty/muted palette.
+
+Limits for this stage
+---------------------
+- At most 2 image generations; the second only if the first fails the checklist.
+- Copy the PNG before any edit call (edits overwrite in place).
+- No upscale, background removal, 3D or rigging in this stage.
+
+Result of call 1 (2026-11-14)
+-----------------------------
+File:        Assets/CharacterArt/Concept/Ronin/Ronin_Concept_A1.png (asset guid 8ea7409efc9c10a478d96bfe3a1316d2)
+Record:      GeneratedAssets/8ea7409efc9c10a478d96bfe3a1316d2/01a1d625-3edb-79e5-ba0f-157e8683e37c.png(.json)
+Checklist:   fails 4 (sash knot with two hanging ends) and 5 (mean luminance 0.314 < 0.4);
+             9 only partly (robe close to the chapter 2 backdrop in value). Everything else passes.
+
+Call 2 (2026-11-14) - last call of stage A
+------------------------------------------
+Before:           copied Ronin_Concept_A1.png -> Ronin_Concept_A1_orig.png (backup) and -> Ronin_Concept_A2.png (edit target,
+                  because the edit overwrites its target in place). A1 itself is unchanged.
+Command:          EditImageWithPrompt
+Model:            gemini-3.0-pro
+Target:           Assets/CharacterArt/Concept/Ronin/Ronin_Concept_A2.png (guid 6cfd263a9ecdb2544abf206e27154d5a)
+Reference:        the target image itself, strength 0.25 (tool default; the MCP tool has no strength parameter,
+                  the value is confirmed in the generation record)
+Record:           GeneratedAssets/6cfd263a9ecdb2544abf206e27154d5a/01a1d63c-073a-7662-b6cf-3084cd2f78fe.png(.json)
+                  (Ronin_Concept_A2.png(.json) in the same folder is the tool's snapshot of the pre-edit image, model "")
+
+Prompt:
+Keep the character, pose, T-pose, face, closed fists, topknot hair, robe design and the plain light gray background exactly as they are. Change only these: (1) the red waist band: make it a narrow flat band wrapped around the waist, ends tucked in flat, no knot, no tails, nothing hanging below the belt line; (2) if any robe panel or hem hangs below the hips, shorten the robe so its hem ends at the hips with no hanging lower panels; (3) lighten the robe to a light warm stone-gray and the trousers to a medium gray-brown, keep the hair very dark brown not black; (4) eyes clearly open and visible, not squinting. Keep flat even front lighting, matte cloth, no highlights.
+
+Result:
+- Band ends removed, but the band lost its red colour (now the same stone-gray as the robe).
+- Robe lightened (chest luminance 0.358 -> 0.512). Trousers, hair, face, fists unchanged (eyes still narrow).
+- Robe hem still reaches the upper thigh.
+- Mean luminance 0.314 -> 0.405.

@@ -1,0 +1,41 @@
+{
+    "asset": "6cfd263a9ecdb2544abf206e27154d5a",
+    "fileName": "01a1d63c-073a-7662-b6cf-3084cd2f78fe.png",
+    "prompt": "Keep the character, pose, T-pose, face, closed fists, topknot hair, robe design and the plain light gray background exactly as they are. Change only these: (1) the red waist band: make it a narrow flat band wrapped around the waist, ends tucked in flat, no knot, no tails, nothing hanging below the belt line; (2) if any robe panel or hem hangs below the hips, shorten the robe so its hem ends at the hips with no hanging lower panels; (3) lighten the robe to a light warm stone-gray and the trousers to a medium gray-brown, keep the hair very dark brown not black; (4) eyes clearly open and visible, not squinting. Keep flat even front lighting, matte cloth, no highlights.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "6cfd263a9ecdb2544abf206e27154d5a",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}

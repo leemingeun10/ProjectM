@@ -1,0 +1,31 @@
+{
+    "asset": "8ea7409efc9c10a478d96bfe3a1316d2",
+    "fileName": "01a1d625-3edb-79e5-ba0f-157e8683e37c.png",
+    "prompt": "Full-body front view, exact symmetrical T-pose, arms perfectly horizontal, legs straight, feet parallel shoulder-width apart. Both hands closed into loose fists as if gripping a round sword handle, thumbs wrapped over the index fingers, palms facing down, hands proportional and not oversized. Hair neatly tied in a compact topknot, solid hair mass, no loose strands. Close-fitting clothing, nothing hanging (no sash tails, ropes, ribbons, capes, long sleeves). Mid-value base colors, no pure black. Clear, evenly lit face, eyes open and visible, no shadow on the face. Stylized semi-realistic game character, matte cloth, no specular highlights, no wet or glossy look, shadowless even front lighting, albedo-like colors. Plain light gray background, entire body visible, no props, no weapon. Character: a wandering masterless swordsman (rōnin-style martial arts drifter), weathered gaunt face with short stubble, plain worn wrap-style robe in faded earthy gray-brown, one saturated accent: a tightly tied rust-red waist band with no hanging ends.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}
