@@ -31,7 +31,7 @@ MonoBehaviour:
   trousersTargetLuminance: 0.38
   trousersMaxGain: 1.6
   weldSeamWeights: 1
-  moveHemWeights: 1
+  moveHemWeights: 0
   hemRobeMinLuminance: 0.4
   hemTop: 0.56
   hemBottomHipShare: 0.7
