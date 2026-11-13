@@ -105,6 +105,10 @@ namespace CharacterPipeline
             public void Refresh(Material material = null)
             {
                 smr.BakeMesh(mesh, false);
+                // Re-baking into the same mesh leaves the renderer's bounds stale, which gets the
+                // copy culled whenever the frame doesn't contain its old position.
+                mesh.RecalculateBounds();
+                go.GetComponent<MeshFilter>().sharedMesh = mesh;
                 go.transform.SetPositionAndRotation(smr.transform.position, smr.transform.rotation);
                 renderer.sharedMaterials = material != null ? new[] { material } : smr.sharedMaterials;
             }
@@ -213,6 +217,53 @@ namespace CharacterPipeline
             }
             sb.Append($" captures: {captureDir}\n");
             return sb.ToString();
+        }
+
+        // One pose of any Humanoid prefab (full body front + side, lower body front), e.g. to compare a
+        // mesh before and after a fix. `normalizedTime` < 0 picks the widest stance of the clip.
+        public static string CapturePose(GameObject prefab, RuntimeAnimatorController controller, string state, float normalizedTime, string prefix)
+        {
+            using (var stage = new Stage())
+            {
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, stage.scene);
+                instance.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                var animator = instance.GetComponent<Animator>();
+                if (controller != null)
+                    animator.runtimeAnimatorController = controller;
+                animator.applyRootMotion = false;
+                animator.Rebind();
+                float t = normalizedTime;
+                if (t < 0f)
+                {
+                    float best = -1f;
+                    for (int k = 0; k <= 20; k++)
+                    {
+                        animator.Play(state, 0, k / 20f);
+                        animator.Update(0f);
+                        float spread = (animator.GetBoneTransform(HumanBodyBones.LeftFoot).position - animator.GetBoneTransform(HumanBodyBones.RightFoot).position).magnitude;
+                        if (spread > best)
+                        {
+                            best = spread;
+                            t = k / 20f;
+                        }
+                    }
+                }
+                animator.Play(state, 0, t);
+                animator.Update(0f);
+                var smr = instance.GetComponentInChildren<SkinnedMeshRenderer>(true);
+                BattlePrefab.MeasureMesh(smr, out float minY, out float maxY);
+                Vector3 centre = new Vector3(0f, (minY + maxY) * 0.5f, 0f);
+                float half = (maxY - minY) * 0.62f;
+                Vector3 hip = animator.GetBoneTransform(HumanBodyBones.Hips).position;
+                using (var view = new BakedView(stage, smr))
+                {
+                    view.Refresh();
+                    stage.Shot(prefix + "_front.png", Vector3.back, centre, half);
+                    stage.Shot(prefix + "_side.png", Vector3.left, centre, half);
+                    stage.Shot(prefix + "_lower_front.png", Vector3.back, hip, 0.45f);
+                }
+                return $"{prefab.name} {state} t={t:F2}: mesh y {minY:F2}..{maxY:F2}, hips {hip}; {prefix}_*.png";
+            }
         }
 
         static Vector3 FistCentre(Func<string, Transform> bone)
@@ -360,6 +411,16 @@ namespace CharacterPipeline
                 sb.Append($"; hem edge stretch (p95, worst frame) {stretchBefore:F2}x before -> {stretchAfter:F2}x after");
             sb.Append('\n');
 
+            if (hemEdges.Count == 0 && HemStates.Contains(state))
+            {
+                animator.Play(state, 0, spreadTime);
+                animator.Update(0f);
+                Vector3 hip = bone("Hips").position;
+                view.Refresh();
+                stage.Shot(prefix + state + "_lower_front.png", Vector3.back, hip, 0.42f);
+                stage.Shot(prefix + state + "_lower_below.png", new Vector3(0f, 1f, 0.35f), hip, 0.42f);
+                sb.Append($"   widest stance at t={spreadTime:F2} (feet {spreadBest:F2} m apart): lower-body captures saved\n");
+            }
             if (hemEdges.Count > 0 && HemStates.Contains(state))
             {
                 animator.Play(state, 0, spreadTime);
