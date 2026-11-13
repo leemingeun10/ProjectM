@@ -23,12 +23,19 @@ namespace Game.Client.Battle
             public GameObject prefab;
             [Tooltip("Raises the model (metres) so its lower sole meets the floor in Idle; retargeted AI rigs can sink a few cm.")]
             public float heightOffset;
+            [Tooltip("Optional controller for this look (e.g. the enemy copy with Foot IK on Idle). Empty = the built-in model's controller.")]
+            public RuntimeAnimatorController controller;
         }
 
-        // Sword placement relative to the right hand, in the fighter's frame while the model is in
-        // its bind T-pose (the same rule as the animation lab, which works across rigs). For the
-        // built-in Character_TPose this matches the scene's TempSword exactly.
+        // Models built by the character pipeline carry a transform with this name under the right
+        // hand, at the measured fist hole, facing along the blade (body forward in the bind pose).
+        public const string SwordSocketName = "SwordSocket";
+
+        // Without a socket: sword placement relative to the right hand, in the fighter's frame while
+        // the model is in its bind T-pose (the same rule as the animation lab, which works across
+        // rigs). For the built-in Character_TPose this matches the scene's TempSword exactly.
         private const float SwordRightOffset = 0.0767f;
+        // The blade's centre (the TempSword cube's pivot) sits this far along the blade from the grip.
         private const float SwordForwardOffset = 0.4f;
 
         [SerializeField] private GameFlowController flow;
@@ -96,7 +103,7 @@ namespace Game.Client.Battle
                 currentModel = null;
             }
 
-            Animator target = prefab == null ? ShowBuiltIn() : ShowPrefab(prefab, model.heightOffset);
+            Animator target = prefab == null ? ShowBuiltIn() : ShowPrefab(prefab, model.heightOffset, model.controller);
             motionPlayer.UseAnimator(target);
             currentLook = look;
         }
@@ -142,7 +149,7 @@ namespace Game.Client.Battle
             return builtInAnimator;
         }
 
-        private Animator ShowPrefab(GameObject prefab, float heightOffset)
+        private Animator ShowPrefab(GameObject prefab, float heightOffset, RuntimeAnimatorController controller)
         {
             // Keeps the prefab's own local scale (the generated models are scaled at the root).
             currentModel = Instantiate(prefab, transform);
@@ -151,7 +158,7 @@ namespace Game.Client.Battle
             currentModel.transform.localRotation = Quaternion.identity;
 
             var animator = currentModel.GetComponent<Animator>();
-            animator.runtimeAnimatorController = builtInAnimator.runtimeAnimatorController;
+            animator.runtimeAnimatorController = controller != null ? controller : builtInAnimator.runtimeAnimatorController;
             animator.applyRootMotion = false;
             animator.cullingMode = builtInAnimator.cullingMode;
 
@@ -171,12 +178,22 @@ namespace Game.Client.Battle
             }
 
             Transform body = transform;
-            sword.SetParent(hand, true);
-            sword.SetPositionAndRotation(
-                hand.position + body.right * SwordRightOffset + body.forward * SwordForwardOffset,
-                Quaternion.LookRotation(body.forward, body.up));
+            Transform socket = hand.Find(SwordSocketName);
+            if (socket != null)
+            {
+                sword.SetParent(socket, true);
+                sword.SetPositionAndRotation(socket.position + socket.forward * SwordForwardOffset, socket.rotation);
+            }
+            else
+            {
+                sword.SetParent(hand, true);
+                sword.SetPositionAndRotation(
+                    hand.position + body.right * SwordRightOffset + body.forward * SwordForwardOffset,
+                    Quaternion.LookRotation(body.forward, body.up));
+            }
             // Same blade size in the world whatever the bone scale (the trail tip rides on it).
-            Vector3 parentScale = hand.lossyScale;
+            Transform parent = sword.parent;
+            Vector3 parentScale = parent.lossyScale;
             sword.localScale = new Vector3(swordWorldScale.x / parentScale.x, swordWorldScale.y / parentScale.x, swordWorldScale.z / parentScale.x);
         }
 

@@ -5,7 +5,7 @@ namespace Game.Client.Battle
     public enum EnemyLook
     {
         Default = 0,
-        Ronin = 1,          // 낭인 (Ronin_Fist.prefab)
+        Ronin = 1,          // 낭인 (Ronin_V2_Fist.prefab; the old Ronin_Fist.prefab is no longer used)
         BlackSwordsman = 2, // 흑의검객 (BlackSwordsman_Fist.prefab)
     }
 

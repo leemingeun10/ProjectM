@@ -7770,11 +7770,13 @@ MonoBehaviour:
   sword: {fileID: 1194837090}
   models:
   - look: 1
-    prefab: {fileID: 2325808217355632463, guid: 283722564301f8a4786236637e64ae98, type: 3}
-    heightOffset: 0.027
+    prefab: {fileID: 8690366471562343090, guid: 654c50f71258ea544b9d537cbe5bff41, type: 3}
+    heightOffset: 0.029
+    controller: {fileID: 0}
   - look: 2
     prefab: {fileID: 2561486276947761668, guid: 0fccb4920f7836542b46e7c0ca9772c4, type: 3}
     heightOffset: 0.022
+    controller: {fileID: 0}
 --- !u!1 &610294504
 GameObject:
   m_ObjectHideFlags: 0
