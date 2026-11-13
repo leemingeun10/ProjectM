@@ -5,7 +5,8 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Game.sim",
-        "Game.Client"
+        "Game.Client",
+        "CharacterPipeline.Editor"
     ],
     "includePlatforms": [
         "Editor"
