@@ -8,6 +8,7 @@ namespace Game.Tests
     {
         [TestCase(1, EnemyLook.Ronin)]
         [TestCase(2, EnemyLook.BlackSwordsman)]
+        [TestCase(3, EnemyLook.PlumSwordsman)]
         public void ForChapter_GivesEachChapterItsEnemy(int chapter, EnemyLook expected)
         {
             Assert.AreEqual(expected, EnemyLooks.ForChapter(chapter));
@@ -29,6 +30,8 @@ namespace Game.Tests
         [TestCase(5, EnemyLook.Ronin)]
         [TestCase(6, EnemyLook.BlackSwordsman)]
         [TestCase(10, EnemyLook.BlackSwordsman)]
+        [TestCase(11, EnemyLook.PlumSwordsman)]
+        [TestCase(15, EnemyLook.PlumSwordsman)]
         public void Stages_FaceTheirChaptersEnemy(int stageIndex, EnemyLook expected)
         {
             Assert.AreEqual(expected, EnemyLooks.ForChapter(StageChapters.ChapterOf(stageIndex)));
