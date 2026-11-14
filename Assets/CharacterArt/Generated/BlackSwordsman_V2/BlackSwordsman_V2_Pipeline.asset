@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a73033935a7fbe4c9f61439dd17a149, type: 3}
+  m_Name: BlackSwordsman_V2_Pipeline
+  m_EditorClassIdentifier: CharacterPipeline.Editor::CharacterPipeline.CharacterPipelineConfig
+  modelPrefab: {fileID: 1988316374588309119, guid: 3afb1d67ee8bdc64c956a662e6edc635, type: 3}
+  animatorController: {fileID: 9100000, guid: c52acaf66a9c77e4f9922ae41dce718a, type: 2}
+  outputName: BlackSwordsman_V2
+  targetHeight: 1.744
+  smoothness: 0.15
+  maxTextureSize: 1024
+  colorFormat: 2
+  normalFormat: 0
+  paintBelt: 0
+  beltColor: {r: 0.33, g: 0.16, b: 0.11, a: 1}
+  beltBand: {x: 0.548, y: 0.595}
+  beltMaxLuminance: 0.42
+  torsoHalfWidth: 0.15
+  brightenTrousers: 0
+  trousersBand: {x: 0.06, y: 0.43}
+  trousersMaxLuminance: 0.4
+  trousersTargetLuminance: 0.38
+  trousersMaxGain: 1.6
+  weldSeamWeights: 1
+  moveHemWeights: 0
+  hemRobeMinLuminance: 0.4
+  hemTop: 0.56
+  hemBottomHipShare: 0.7
+  socketGridStep: 0.002
+  swordForwardOffset: 0.4
+  measuredHeightBeforeScale: 1.010563
+  appliedScale: 1.7257706
+  idleHeightOffset: 0.024019334
+  socketLocalPosition: {x: -0.008525969, y: 0.055980563, z: 0.0010995717}
+  socketLocalRotation: {x: 0.07304677, y: -0.0758283, z: 0.7481554, w: 0.65511656}
+  fistHoleThrough: 1
+  lastReport: "Humanoid: Assets/CharacterArt/Generated/BlackSwordsman_V2/BlackSwordsman_V2_Assets/selected.fbx\n
+    mapped 22 bones (required 15/15, fingers 0)\n  Hips <- Hip\n  LeftUpperLeg <-
+    L_Thigh\n  RightUpperLeg <- R_Thigh\n  LeftLowerLeg <- L_Calf\n  RightLowerLeg
+    <- R_Calf\n  LeftFoot <- L_Foot\n  RightFoot <- R_Foot\n  Spine <- Waist\n  Chest
+    <- Spine01\n  Neck <- NeckTwist01\n  Head <- Head\n  LeftShoulder <- L_Clavicle\n 
+    RightShoulder <- R_Clavicle\n  LeftUpperArm <- L_Upperarm\n  RightUpperArm <-
+    R_Upperarm\n  LeftLowerArm <- L_Forearm\n  RightLowerArm <- R_Forearm\n  LeftHand
+    <- L_Hand\n  RightHand <- R_Hand\n  LeftToes <- L_ToeBase\n  RightToes <- R_ToeBase\n 
+    UpperChest <- Spine02\nT-pose (angle from target, before -> after):\nPelvis 6.1\xB0
+    -> 0.00\xB0\nSpine 3.5\xB0 -> 0.00\xB0\nChest 3.5\xB0 -> 0.00\xB0\nUpperChest
+    3.5\xB0 -> 0.00\xB0\nNeck 3.5\xB0 -> 0.00\xB0\nL Shoulder 9.0\xB0 -> 0.00\xB0\nL
+    UpperArm 4.4\xB0 -> 0.00\xB0\nL LowerArm 5.5\xB0 -> 0.00\xB0\nR Shoulder 9.0\xB0
+    -> 0.00\xB0\nR UpperArm 5.3\xB0 -> 0.00\xB0\nR LowerArm 3.9\xB0 -> 0.00\xB0\nL
+    UpperLeg 9.7\xB0 -> 0.00\xB0\nL LowerLeg 6.5\xB0 -> 0.00\xB0\nR UpperLeg 6.8\xB0
+    -> 0.00\xB0\nR LowerLeg 6.0\xB0 -> 0.00\xB0\navatar valid=True human=True\nMaterial:\n
+    mean luminance (UV-covered texels) 0.191 -> 0.191\n island padding: 16 px, 888467
+    texels filled\n Assets/CharacterArt/Generated/BlackSwordsman_V2/Enemy/BlackSwordsman_V2_Enemy.mat:
+    smoothness 0.15, textures 1024 (ASTC_6x6 / ASTC_4x4 on Android), source 2048x2048\nSeam
+    weld: 624 seam positions had differing weights (averaged)\nHem weights: 0 robe
+    vertices between h 0.501 and 0.560 and 0 belt vertices -> hips 'Hip' (share 0.70
+    at the bottom, 1 at the top), mean weight moved 0.00; saved Assets/CharacterArt/Generated/BlackSwordsman_V2/BlackSwordsman_V2_Mesh.asset\nBattle
+    prefab:\n bones re-posed 57; mesh height 1.011 -> scale 1.7258 -> 1.744 m, soles
+    at y 0.0000\n rootBone Hip, bounds \xB11.3 m around the hips\nFist hole: grid
+    53x45 @ 2.0 mm, fist extent across 10.4 cm, up 8.8 cm, along forward 9.8 cm\n
+    through hole: 10 cells (~0.40 cm\xB2)\n centre (world, rel. hand) (9.60, 0.20,
+    -1.85) cm, hand-local (-0.01, 0.06, 0.00)\n saved Assets/CharacterArt/Generated/BlackSwordsman_V2/BlackSwordsman_V2_Fist.prefab\n
+    Idle soles (lowest over 8 samples): left 4.2 cm, right -2.4 cm -> height offset
+    2.4 cm (after it: left 6.6, right 0.0 cm)\nInspection:\n triangles 9518, vertices
+    5871, materials 1, bones 41\n height 1.744 m (scale 1.7258), soles at 0.0000\n
+    bind T-pose angle from target: Pelvis 0.00\xB0, Spine 0.00\xB0, Chest 0.00\xB0,
+    UpperChest 0.00\xB0, Neck 0.00\xB0, L Shoulder 0.00\xB0, L UpperArm 0.00\xB0,
+    L LowerArm 0.00\xB0, R Shoulder 0.00\xB0, R UpperArm 0.00\xB0, R LowerArm 0.00\xB0,
+    L UpperLeg 0.00\xB0, L LowerLeg 0.00\xB0, R UpperLeg 0.00\xB0, R LowerLeg 0.00\xB0\n
+    proportions:\n  this: height 1.744 m, hip joint 0.503, shoulder width 0.226,
+    arm 0.263, leg 0.499 (of height)\n  player (Character_TPose): height 1.805 m,
+    hip joint 0.516, shoulder width 0.208, arm 0.305, leg 0.458 (of height)\n hem
+    edges compared: 0\n Idle t=0: soles left 6.9 cm, right 0.1 cm (with offset 2.4
+    cm)\n Combat_Thrust (1.00 s): plays yes; soles left 4.6..9.0 cm, right -0.4..3.7
+    cm\n   widest stance at t=0.35 (feet 1.10 m apart): lower-body captures saved\n
+    Combat_SlashLR (1.00 s): plays yes; soles left 14.5..15.5 cm, right 12.6..14.5
+    cm\n   widest stance at t=0.60 (feet 0.67 m apart): lower-body captures saved\n
+    Combat_SlashRL (1.00 s): plays yes; soles left 11.3..14.1 cm, right 8.4..14.4
+    cm\n Combat_SlashDown (1.00 s): plays yes; soles left 14.5..16.2 cm, right 9.6..13.9
+    cm\n   widest stance at t=0.25 (feet 0.78 m apart): lower-body captures saved\n
+    Combat_Counter (1.00 s): plays yes; soles left 3.4..7.4 cm, right -0.1..2.1 cm\n
+    captures: D:\\ProjectM\\Logs\\CharacterPipeline\\BlackSwordsman_V2\n"
