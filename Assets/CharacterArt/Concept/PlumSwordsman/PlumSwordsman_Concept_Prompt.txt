@@ -68,3 +68,20 @@ Result of edit 3 (final B1): older calm face with a thin moustache and short goa
 just the temples, but still dark at the top); clothing (ivory jacket and sash, navy trousers, one pink emblem), pose,
 T-pose arms and fists unchanged. Distinct from the Ronin (stubble, younger) and the Black Swordsman (clean-shaven,
 young). Record: GeneratedAssets/e04003e8f64cf1c4f94eb31478072209/01a1d9a9-3ddc-....png. Approved per E-B decision.
+
+Stage E-C+D (2026-11-14): background removal, mesh, rig
+-------------------------------------------------------
+B1 copied to PlumSwordsman_Concept_B1_nobg.png, then RemoveImageBackground (photoroom-bg-removal) in place.
+Record: GeneratedAssets/a6f21007f220e38449a1ae205f6b684f/01a1da64-3306-....png.
+Check: one connected opaque region, bbox x 90-934 / top at y 29 (same as B1), 7,791 semi-transparent edge pixels,
+2 enclosed holes (44 px) = the openings inside both fists; ivory jacket intact (no cut-outs or blotches); no floor shadow.
+Mesh: GenerateMesh, model3d-tripo3-1 defaults, fbx, reference = _nobg.png,
+prompt "matte cloth, no specular highlights, flat even albedo colors", save Assets/CharacterArt/Generated/PlumSwordsman_V2/PlumSwordsman_V2.prefab.
+Record GeneratedAssets/525ee6e4f4933ac418a0669e111cd64b/01a1da66-fc0d-....fbx.
+9,444 triangles / 5,871 vertices, one submesh, height 1.00 m, origin at the bounding-box centre, Color/NormalGL 2048.
+Albedo vs concept (luminance): jacket skirt 0.68/0.71, sleeve 0.67/0.72, sash 0.62/0.68, trousers 0.11/0.12,
+emblem 0.57/0.68 (pink kept). Ivory stays warm off-white, not yellow or grey. Hair came out black (concept: greyed).
+Rig: RigMesh (model3d-tripo-rigging-v1). Record 01a1da69-db02-....fbx in the same folder. 41 bones, Humanoid 22 (15/15).
+Pipeline config PlumSwordsman_V2_Pipeline.asset: paintBelt off, brightenTrousers off (trousers 0.11 >= 0.08),
+weldSeamWeights on (658 seam positions), moveHemWeights off. Captures: Logs/CharacterPipeline/PlumSwordsman_V2/.
+Not connected to chapter 3 (EnemyLooks.ByChapter has no chapter-3 line; needs a code change, awaiting approval).
