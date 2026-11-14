@@ -1,0 +1,38 @@
+Black Swordsman V2 concept, stage E-A (2026-11-14)
+==================================================
+
+Purpose: front concept for the new semi-realistic Black Swordsman (chapter 2 enemy), same pipeline as Ronin V2.
+Built from the Ronin V2 lessons (Ronin_Concept_Prompt.txt): flat sash wording instead of "tightly tied",
+hem at the hip bone, the accent colour named with its place, realistic arm length / shoulder width.
+
+Call 1
+------
+Command:          GenerateImage
+Model:            gemini-3.0-pro
+Size:             1024 x 1024
+Reference image:  none (text only)
+Negative prompt:  none (the tool has no negative-prompt parameter)
+Seed:             random (tool default)
+Save path:        Assets/CharacterArt/Concept/BlackSwordsman/BlackSwordsman_Concept_A1.png
+
+Prompt:
+Full-body front view of a single character, standing straight in a relaxed A-pose with both arms held slightly away from the body, legs straight, feet shoulder-width apart. Both hands closed into loose fists with palms facing down, hands proportional and not oversized, empty hands, no sword, no weapon, no props. Realistic adult human proportions: arms long enough that the fists reach mid-thigh, shoulders of normal width, not broad or bulky. Hair neatly tied in a compact topknot, solid hair mass, no loose strands. Close-fitting clothing: a short wrap-style jacket whose hem ends at the hip bone, trousers fully visible from the hips down, nothing hanging (no ropes, sash tails, ribbons, capes, long robes or long sleeves). Flat, shadowless, even front lighting, albedo-like colors, matte cloth, no specular highlights, no rim light, no smoke, no dust, no wind. Plain light gray background, entire body visible from head to feet. Stylized semi-realistic game character. Character: a skilled, composed swordsman dressed in black, a sharp, cold and calm face with eyes clearly open, upright posture with neat squared shoulders. Jacket and trousers in a soft charcoal gray, lighter than pure black, with visible fabric folds. Close-fitting black leather wrist guards at the sleeve ends. One accent color only: a flat golden-yellow sash wrapped around the waist, ends tucked in, no knot, no tails.
+
+Words kept out of the prompt:
+low-poly, faceted, flat-shaded, simplified face, mitten, fingers together, dramatic lighting, dusty/muted palette, tightly tied.
+
+Limits for this stage
+---------------------
+- One GenerateImage per character; at most one EditImageWithPrompt, one instruction per edit.
+- Copy the PNG to *_orig.png before an edit (edits overwrite in place).
+- No background removal, mesh or rigging before the concept is approved.
+
+Result of call 1 (2026-11-14)
+-----------------------------
+File:    Assets/CharacterArt/Concept/BlackSwordsman/BlackSwordsman_Concept_A1.png (guid e5ccec306424d8d41a1f319e6c8da13c)
+Record:  GeneratedAssets/e5ccec306424d8d41a1f319e6c8da13c/01a1d926-2bb3-7074-bc14-0f23f8dbbfe7.png(.json)
+Ignored: jacket came out navy and trousers brown (not charcoal); the sash is navy with a knot and two tails (no gold
+         accent at all); no wrist guards; the floor under the feet has a soft shadow.
+Kept:    one figure, front view, relaxed arms, loose fists, topknot, short jacket ending at the hip, semi-realistic.
+No edit made: at least three separate fixes are needed (colours, sash, wrist guards), more than the one-instruction edit
+allowed for this stage. Waiting for a decision.

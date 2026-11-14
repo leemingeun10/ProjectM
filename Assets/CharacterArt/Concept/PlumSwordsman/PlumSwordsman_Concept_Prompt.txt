@@ -1,0 +1,38 @@
+Plum-blossom swordsman (매화검수) concept, stage E-A (2026-11-14)
+================================================================
+
+Purpose: front concept for the plum-blossom sect swordsman (enemy from chapter 3 on), same pipeline as Ronin V2.
+Built from the Ronin V2 lessons (Ronin_Concept_Prompt.txt). Must read at a glance next to Ronin V2 (beige/gray)
+and the Black Swordsman (charcoal): bright ivory jacket, dark navy trousers so the figure doesn't wash out.
+Accent: one place only, the plum-blossom embroidery on the chest (the sash is ivory, not pink).
+
+Call 1
+------
+Command:          GenerateImage
+Model:            gemini-3.0-pro
+Size:             1024 x 1024
+Reference image:  none (text only)
+Negative prompt:  none (the tool has no negative-prompt parameter)
+Seed:             random (tool default)
+Save path:        Assets/CharacterArt/Concept/PlumSwordsman/PlumSwordsman_Concept_A1.png
+
+Prompt:
+Full-body front view of a single character, standing straight in a relaxed A-pose with both arms held slightly away from the body, legs straight, feet shoulder-width apart. Both hands closed into loose fists with palms facing down, hands proportional and not oversized, empty hands, no sword, no weapon, no props. Realistic adult human proportions: arms long enough that the fists reach mid-thigh, shoulders of normal width, not broad or bulky. Hair neatly tied in a compact topknot, solid hair mass, no loose strands. Close-fitting clothing: a short wrap-style jacket whose hem ends at the hip bone, trousers fully visible from the hips down, nothing hanging (no ropes, sash tails, ribbons, capes, long robes or long sleeves). Flat, shadowless, even front lighting, albedo-like colors, matte cloth, no specular highlights, no rim light, no smoke, no dust, no wind. Plain light gray background, entire body visible from head to feet. Stylized semi-realistic game character. Character: a dignified, disciplined young swordsman of a mountain plum-blossom sword sect, a calm and refined face with eyes clearly open. Short wrap jacket in bright ivory white with visible fabric folds. Trousers in deep navy blue, clearly much darker than the jacket. A narrow flat ivory sash around the waist, ends tucked in, no knot, no tails. A thin plain dark headband around the topknot with no hanging ends. One accent color only: a small pale plum-blossom pink flower embroidered on the left side of the chest, and no pink anywhere else.
+
+Words kept out of the prompt:
+low-poly, faceted, flat-shaded, simplified face, mitten, fingers together, dramatic lighting, dusty/muted palette, tightly tied.
+
+Limits for this stage
+---------------------
+- One GenerateImage per character; at most one EditImageWithPrompt, one instruction per edit.
+- Copy the PNG to *_orig.png before an edit (edits overwrite in place).
+- No background removal, mesh or rigging before the concept is approved.
+
+Result of call 1 (2026-11-14)
+-----------------------------
+File:    Assets/CharacterArt/Concept/PlumSwordsman/PlumSwordsman_Concept_A1.png (guid 0531c19d0a02cd24689c68cceccc37a4)
+Record:  GeneratedAssets/0531c19d0a02cd24689c68cceccc37a4/01a1d926-e86a-7a8b-adbd-0a2729ab1696.png(.json)
+Ignored: rendered as a flat 2D illustration, not semi-realistic; jacket is slate blue, not ivory; no sash; no pink
+         plum embroidery (no accent at all); black gloves instead of bare fists; the figure reads as female and slight.
+Kept:    one figure, front view, A-pose, dark trousers, topknot with a thin band, short jacket ending at the hip.
+No edit made: style, colour and the missing accent are separate fixes. Waiting for a decision.
