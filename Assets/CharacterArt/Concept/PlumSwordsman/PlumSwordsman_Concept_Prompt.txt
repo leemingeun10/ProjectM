@@ -36,3 +36,24 @@ Ignored: rendered as a flat 2D illustration, not semi-realistic; jacket is slate
          plum embroidery (no accent at all); black gloves instead of bare fists; the figure reads as female and slight.
 Kept:    one figure, front view, A-pose, dark trousers, topknot with a thin band, short jacket ending at the hip.
 No edit made: style, colour and the missing accent are separate fixes. Waiting for a decision.
+
+Retry B (2026-11-14): edit from Ronin A2
+---------------------------------------
+Decision: start from the approved Ronin_Concept_A2.png (copied to PlumSwordsman_Concept_B1.png and
+PlumSwordsman_Concept_B1_orig.png) and change only the clothing colours by edit. A1 stays as a record.
+Limits: at most 2 edits, one instruction each; edits overwrite B1 in place, B1_orig keeps the start image.
+
+Edit 1 (EditImageWithPrompt, gemini-3.0-pro, target PlumSwordsman_Concept_B1.png, no extra reference image):
+Recolor the clothing only: the jacket and the waist sash become ivory off-white cloth, and the trousers become deep navy blue. Keep the face, hair, pose, outstretched arms, fists, body proportions, fabric texture, lighting and background exactly the same.
+
+Edit 2 (accent):
+Add one small five-petal plum-blossom emblem, embroidered in soft pink, on the left chest of the jacket. Keep the face, hair, pose, outstretched arms, fists, body proportions, fabric texture, lighting and background exactly the same.
+
+Result of edit 1: jacket and sash ivory off-white, trousers deep navy; face, pose, T-pose arms and background unchanged.
+Edit 2 sent as written above.
+
+Result of edit 2 (final B1): one small soft-pink five-petal plum emblem on the character's left chest (viewer's right);
+nothing else changed. Records: GeneratedAssets/e04003e8f64cf1c4f94eb31478072209/01a1d998-421b-... (edit 1),
+01a1d999-dfa4-... (edit 2). Edits used: 2 of 2.
+Checks: jacket ivory - pass; trousers navy - pass; one pink emblem only - pass; face/pose unchanged - pass.
+Face is the same as the Ronin's (not edited, per instruction; left for the user to judge).

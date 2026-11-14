@@ -36,3 +36,26 @@ Ignored: jacket came out navy and trousers brown (not charcoal); the sash is nav
 Kept:    one figure, front view, relaxed arms, loose fists, topknot, short jacket ending at the hip, semi-realistic.
 No edit made: at least three separate fixes are needed (colours, sash, wrist guards), more than the one-instruction edit
 allowed for this stage. Waiting for a decision.
+
+Retry B (2026-11-14): edit from Ronin A2
+---------------------------------------
+Decision: start from the approved Ronin_Concept_A2.png (copied to BlackSwordsman_Concept_B1.png and
+BlackSwordsman_Concept_B1_orig.png) and change only the clothing colours by edit. A1 stays as a record.
+Limits: at most 2 edits, one instruction each; edits overwrite B1 in place, B1_orig keeps the start image.
+
+Edit 1 (EditImageWithPrompt, gemini-3.0-pro, target BlackSwordsman_Concept_B1.png, no extra reference image):
+Recolor the clothing only: the jacket and the trousers become dark charcoal cloth (a dark grey with visible fabric texture, not pure black), and the waist sash becomes a flat gold-yellow band. Keep the face, hair, pose, outstretched arms, fists, body proportions, fabric texture, lighting and background exactly the same.
+
+Edit 2 (only if the face reads as the Ronin's):
+Change the face to a younger, clean-shaven man with narrow sharp eyes and a cold, calm expression; keep the clothing exactly the same. Keep the face, hair, pose, outstretched arms, fists, body proportions, fabric texture, lighting and background exactly the same.
+
+Result of edit 1: jacket and trousers dark charcoal with texture, sash flat gold-yellow, no hanging ends; face, pose,
+T-pose arms and background unchanged. The face is identical to the Ronin's, so edit 2 runs.
+Edit 2 as sent: the closing sentence drops "face" (it would contradict the face change):
+Change the face to a younger, clean-shaven man with narrow sharp eyes and a cold, calm expression; keep the clothing exactly the same. Keep the hair, pose, outstretched arms, fists, body proportions, fabric texture, lighting and background exactly the same.
+
+Result of edit 2 (final B1): younger clean-shaven face, narrow sharp eyes, cold calm expression; clothing, sash, pose,
+T-pose arms, fists and background unchanged. Records: GeneratedAssets/274462fb1f5784c48b4a88ce0c6da247/
+01a1d997-c282-... (edit 1), 01a1d999-5de0-... (edit 2). Edits used: 2 of 2.
+Checks: jacket/trousers charcoal - pass; sash gold-yellow - pass; nothing hanging - pass; pose/T-pose/fists - pass;
+face distinct from the Ronin - pass. Still from A2: bare feet, hips-level sash wraps (no wrist guards, not asked here).
