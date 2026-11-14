@@ -59,3 +59,18 @@ T-pose arms, fists and background unchanged. Records: GeneratedAssets/274462fb1f
 01a1d997-c282-... (edit 1), 01a1d999-5de0-... (edit 2). Edits used: 2 of 2.
 Checks: jacket/trousers charcoal - pass; sash gold-yellow - pass; nothing hanging - pass; pose/T-pose/fists - pass;
 face distinct from the Ronin - pass. Still from A2: bare feet, hips-level sash wraps (no wrist guards, not asked here).
+
+Stage E-B (2026-11-14): background removal and mesh
+---------------------------------------------------
+B1 approved. B1 copied to BlackSwordsman_Concept_B1_nobg.png, then RemoveImageBackground (photoroom-bg-removal) in place.
+Record: GeneratedAssets/3608e6a28a543ac4c98eb3ce73f3218f/01a1d9a9-94bc-....png.
+Check: one connected opaque region, bbox x 90-934 / top at y 29 (same as B1: fists and topknot intact), 8,244
+semi-transparent edge pixels, alpha 0 beside the feet (floor shadow removed).
+Mesh: GenerateMesh, model3d-tripo3-1 defaults, fbx, reference = _nobg.png,
+prompt "matte cloth, no specular highlights, flat even albedo colors" (same as Ronin V2),
+save Assets/CharacterArt/Generated/BlackSwordsman_V2/BlackSwordsman_V2.prefab.
+Mesh result: Assets/CharacterArt/Generated/BlackSwordsman_V2/ (BlackSwordsman_V2.prefab, _Assets/selected.fbx, selected.fbm
+Color/NormalGL 2048x2048, Materials/Color_*.mat). Record GeneratedAssets/3afb1d67ee8bdc64c956a662e6edc635/01a1d9ab-ef4d-....fbx.
+9,526 triangles / 5,871 vertices, one submesh; normalised height 1.00 m, origin at the bounding-box centre, faces +Z;
+FBX Generic, globalScale 1. Albedo vs concept (luminance): chest 0.18/0.22, trousers 0.14/0.15, sash 0.43/0.43.
+Captures: Logs/CharacterPipeline/BlackSwordsman_V2/BlackSwordsman_V2_raw_*.png.

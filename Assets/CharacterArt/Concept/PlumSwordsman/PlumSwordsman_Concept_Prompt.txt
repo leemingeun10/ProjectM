@@ -57,3 +57,14 @@ nothing else changed. Records: GeneratedAssets/e04003e8f64cf1c4f94eb31478072209/
 01a1d999-dfa4-... (edit 2). Edits used: 2 of 2.
 Checks: jacket ivory - pass; trousers navy - pass; one pink emblem only - pass; face/pose unchanged - pass.
 Face is the same as the Ronin's (not edited, per instruction; left for the user to judge).
+
+Stage E-B (2026-11-14): face edit
+---------------------------------
+B1 (clothes + emblem, Ronin face) copied to PlumSwordsman_Concept_B1_clothes.png before the edit;
+B1_orig.png stays the untouched Ronin A2.
+Edit 3 (EditImageWithPrompt, gemini-3.0-pro, target PlumSwordsman_Concept_B1.png):
+Change the face to a calm, dignified man with greying temples and a short, neat, thin moustache and goatee; keep the clothing exactly the same. Keep the hair style, pose, outstretched arms, fists, body proportions, fabric texture, lighting and background exactly the same.
+Result of edit 3 (final B1): older calm face with a thin moustache and short goatee, hair greyed overall (more than
+just the temples, but still dark at the top); clothing (ivory jacket and sash, navy trousers, one pink emblem), pose,
+T-pose arms and fists unchanged. Distinct from the Ronin (stubble, younger) and the Black Swordsman (clean-shaven,
+young). Record: GeneratedAssets/e04003e8f64cf1c4f94eb31478072209/01a1d9a9-3ddc-....png. Approved per E-B decision.
