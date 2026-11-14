@@ -6,7 +6,7 @@ namespace Game.Client.Battle
     {
         Default = 0,
         Ronin = 1,          // 낭인 (Ronin_V2_Fist.prefab; the old Ronin_Fist.prefab is no longer used)
-        BlackSwordsman = 2, // 흑의검객 (BlackSwordsman_Fist.prefab)
+        BlackSwordsman = 2, // 흑의검객 (BlackSwordsman_V2_Fist.prefab; the old BlackSwordsman_Fist.prefab is no longer used)
     }
 
     // The one place that decides who the player faces. The 무공 제작 screen (and every other

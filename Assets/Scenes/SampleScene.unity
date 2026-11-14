@@ -7774,8 +7774,8 @@ MonoBehaviour:
     heightOffset: 0.029
     controller: {fileID: 0}
   - look: 2
-    prefab: {fileID: 2561486276947761668, guid: 0fccb4920f7836542b46e7c0ca9772c4, type: 3}
-    heightOffset: 0.022
+    prefab: {fileID: 655802920708700374, guid: a667fe91344905946a0d81fcb5721f52, type: 3}
+    heightOffset: 0.024
     controller: {fileID: 0}
 --- !u!1 &610294504
 GameObject:
