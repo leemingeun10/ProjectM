@@ -1,0 +1,880 @@
+{
+  "version": 1,
+  "protagonist": "???",
+  "partEnd": {
+    "title": "1부 끝",
+    "body": "저장된 플래그는 {flag}다. 이후 이야기에 미치는 영향은 아직 정하지 않았다."
+  },
+  "chapters": [
+    {
+      "ch": 1,
+      "title": "길바닥",
+      "sub": "낭인",
+      "scene": "street",
+      "nodes": [
+        {
+          "x": 92,
+          "y": 540
+        },
+        {
+          "x": 252,
+          "y": 432
+        },
+        {
+          "x": 118,
+          "y": 322
+        },
+        {
+          "x": 246,
+          "y": 208
+        },
+        {
+          "x": 150,
+          "y": 92
+        }
+      ]
+    },
+    {
+      "ch": 2,
+      "title": "암살단",
+      "sub": "흑의검객",
+      "scene": "wall",
+      "nodes": [
+        {
+          "x": 262,
+          "y": 540
+        },
+        {
+          "x": 112,
+          "y": 436
+        },
+        {
+          "x": 236,
+          "y": 326
+        },
+        {
+          "x": 104,
+          "y": 212
+        },
+        {
+          "x": 206,
+          "y": 92
+        }
+      ]
+    },
+    {
+      "ch": 3,
+      "title": "화산",
+      "sub": "매화검수",
+      "scene": "peak",
+      "nodes": [
+        {
+          "x": 96,
+          "y": 540
+        },
+        {
+          "x": 240,
+          "y": 440
+        },
+        {
+          "x": 128,
+          "y": 330
+        },
+        {
+          "x": 250,
+          "y": 214
+        },
+        {
+          "x": 168,
+          "y": 88
+        }
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "id": "1-1",
+      "ch": 1,
+      "n": 1,
+      "name": "눈을 뜨다",
+      "kind": "battle",
+      "clear": "win",
+      "enemy": "길바닥 낭인",
+      "aiStage": 1,
+      "look": "Ronin",
+      "theme": "Street",
+      "event": "기억이 없는 주인공이 깨어난다",
+      "system": "궤적 그리기 튜토리얼",
+      "tags": [
+        "튜토리얼"
+      ],
+      "prov": false,
+      "starter": true,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "illust",
+          "art": "컷 1-1a. 담 밑 길바닥에서 눈을 뜨는 소년, 머리띠의 청록 천",
+          "image": "Cut_1-1a_B1",
+          "speaker": "",
+          "line": "눈을 떴다. 이름도, 여기가 어디인지도 떠오르지 않는다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "길바닥 낭인",
+          "line": "꼬마, 거기는 내 자리다. 비켜.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "???",
+          "line": "……손이 먼저 움직인다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "길바닥 낭인",
+          "line": "그 선은 어디서 배웠냐.",
+          "after": true,
+          "black": false
+        },
+        {
+          "type": "illust",
+          "art": "손에 쥔 나뭇가지를 내려다보는 소년",
+          "image": "",
+          "speaker": "",
+          "line": "모른다. 몸이 기억하고 있을 뿐이다.",
+          "after": true,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "1-2",
+      "ch": 1,
+      "n": 2,
+      "name": "먹을 것을 찾아서",
+      "kind": "story",
+      "clear": "always",
+      "enemy": "",
+      "aiStage": 0,
+      "look": "",
+      "theme": "",
+      "event": "동냥으로 버티다 만두를 들고 달아난다",
+      "system": "",
+      "tags": [
+        "스토리 전용"
+      ],
+      "prov": false,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "illust",
+          "art": "장터 구석에서 손을 내민 소년, 지나치는 발들",
+          "image": "",
+          "speaker": "",
+          "line": "배가 고팠다. 손을 내밀어도 돌아오는 것은 없었다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "만두집 주인",
+          "line": "거기 서! 저 녀석 잡아라!",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "illust",
+          "art": "컷 1-2a. 만두를 들고 달아나는 소년, 빗자루를 든 주인의 뒷모습",
+          "image": "Cut_1-2a_B1",
+          "speaker": "",
+          "line": "식은 만두 하나가 그날의 전부였다.",
+          "after": false,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "1-3",
+      "ch": 1,
+      "n": 3,
+      "name": "한 조각의 떡, 낯선 시선",
+      "kind": "story",
+      "clear": "always",
+      "enemy": "",
+      "aiStage": 0,
+      "look": "",
+      "theme": "",
+      "event": "거지(가명1)를 만난다. 평범한 아저씨(가명2)가 음식을 나눠 준다",
+      "system": "",
+      "tags": [
+        "음식 나눔",
+        "복선"
+      ],
+      "prov": false,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "illust",
+          "art": "컷 1-3a. 담 밑에 나란히 앉은 거지와 소년, 반으로 가른 떡",
+          "image": "",
+          "speaker": "",
+          "line": "담 밑에는 먼저 온 사람이 있었다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "가명1",
+          "line": "혼자 먹으면 체한다. 반은 네 거다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "???",
+          "line": "……왜 줘요.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "가명1",
+          "line": "나눠야 내일도 얻어먹지.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "illust",
+          "art": "컷 1-3b. 떡을 건네는 평범한 아저씨, 아이에게 오래 머무는 시선",
+          "image": "",
+          "speaker": "",
+          "line": "지나가던 아저씨가 걸음을 멈췄다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "가명2",
+          "line": "많이 먹어라. 눈이 좋구나, 너.",
+          "after": false,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "1-4",
+      "ch": 1,
+      "n": 4,
+      "name": "몽둥이와 삼재",
+      "kind": "battle",
+      "clear": "win",
+      "enemy": "가명1 (대련)",
+      "aiStage": 2,
+      "look": "Ronin",
+      "theme": "Street",
+      "event": "가명1의 동작을 쉽게 따라 한다. 삼재검법을 배운다",
+      "system": "무공 제작 튜토리얼",
+      "tags": [
+        "튜토리얼",
+        "땅에 그은 선"
+      ],
+      "prov": false,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "가명1",
+          "line": "개방에서 굴러먹던 시절에 배운 거다. 삼재검법. 셋만 알면 된다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "illust",
+          "art": "컷 1-4a. 땅에 선을 긋는 거지, 몽둥이를 든 소년",
+          "image": "",
+          "speaker": "",
+          "line": "한 번 본 선을, 몸이 그대로 따라 그었다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "가명1",
+          "line": "한 번 보고 그걸 해? 너 대체 뭐 하던 놈이냐.",
+          "after": true,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "1-5",
+      "ch": 1,
+      "n": 5,
+      "name": "데려가는 자들",
+      "kind": "loss",
+      "clear": "always",
+      "enemy": "흑의검객 둘 (엑스트라 1, 2)",
+      "aiStage": 15,
+      "look": "BlackSwordsman",
+      "theme": "Street",
+      "event": "가명1이 쓰러지고, 주인공은 맞서다 기절해 납치된다",
+      "system": "이길 수 없는 전투",
+      "tags": [
+        "패배 전용",
+        "납치"
+      ],
+      "prov": false,
+      "starter": false,
+      "outcomeLabel": "기절",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "illust",
+          "art": "컷 1-5a. 골목을 막아선 검은 옷의 두 사람",
+          "image": "",
+          "speaker": "",
+          "line": "해 질 무렵, 골목 끝이 막혔다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "흑의검객",
+          "line": "그 아이다. 데려간다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "가명1",
+          "line": "애는 건드리지 마라!",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "illust",
+          "art": "암전. 둔탁한 소리",
+          "image": "",
+          "speaker": "",
+          "line": "눈을 떴을 때, 가명1은 바닥에 쓰러져 있었다.",
+          "after": false,
+          "black": true
+        },
+        {
+          "type": "illust",
+          "art": "컷 1-5b. 쓰러진 소년, 땅에 떨어진 몽둥이, 멀어지는 골목",
+          "image": "",
+          "speaker": "",
+          "line": "선이 닿지 않는다. 시야가 어두워진다.",
+          "after": true,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "가명2 (목소리)",
+          "line": "다치게 하지 말라고 했을 텐데.",
+          "after": true,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "2-1",
+      "ch": 2,
+      "n": 1,
+      "name": "번호가 붙다",
+      "kind": "story",
+      "clear": "always",
+      "enemy": "",
+      "aiStage": 0,
+      "look": "",
+      "theme": "",
+      "event": "이름 대신 번호를 받는다",
+      "system": "",
+      "tags": [],
+      "prov": true,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "illust",
+          "art": "어두운 방, 줄지어 선 아이들",
+          "image": "",
+          "speaker": "",
+          "line": "눈을 뜨자 이름 대신 번호가 주어졌다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "교관",
+          "line": "오늘부터 너는 열일곱이다.",
+          "after": false,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "2-2",
+      "ch": 2,
+      "n": 2,
+      "name": "지급복과 청록 천",
+      "kind": "story",
+      "clear": "always",
+      "enemy": "",
+      "aiStage": 0,
+      "look": "",
+      "theme": "",
+      "event": "검은 지급복을 받지만 청록 천은 지킨다",
+      "system": "",
+      "tags": [
+        "청록 천"
+      ],
+      "prov": true,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "illust",
+          "art": "검은 지급복 위에 묶은 청록 머리띠",
+          "image": "",
+          "speaker": "",
+          "line": "옷은 바뀌었다. 머리띠만은 내놓지 않았다.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "교관",
+          "line": "그 천은 뭐냐. 됐다, 묶어 둬라.",
+          "after": false,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "2-3",
+      "ch": 2,
+      "n": 3,
+      "name": "번호로 불리는 아이들",
+      "kind": "battle",
+      "clear": "win",
+      "enemy": "훈련생",
+      "aiStage": 6,
+      "look": "BlackSwordsman",
+      "theme": "TrainingHall",
+      "event": "번호로만 불리는 아이들과 겨룬다",
+      "system": "",
+      "tags": [
+        "음식 나눔"
+      ],
+      "prov": true,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "아홉",
+          "line": "나는 아홉이야. 너는?",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "illust",
+          "art": "반으로 나눈 밥그릇",
+          "image": "",
+          "speaker": "",
+          "line": "밥을 반으로 나눴다. 누구에게 배운 버릇이었더라.",
+          "after": true,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "2-4",
+      "ch": 2,
+      "n": 4,
+      "name": "졸업 비무",
+      "kind": "battle",
+      "clear": "win",
+      "enemy": "훈련생 수석",
+      "aiStage": 8,
+      "look": "BlackSwordsman",
+      "theme": "TrainingHall",
+      "event": "이긴 쪽만 밖으로 나간다",
+      "system": "",
+      "tags": [],
+      "prov": true,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "교관",
+          "line": "이긴 쪽만 나간다.",
+          "after": false,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "2-5",
+      "ch": 2,
+      "n": 5,
+      "name": "버릴 패",
+      "kind": "boss",
+      "clear": "win",
+      "enemy": "교관",
+      "aiStage": 10,
+      "look": "BlackSwordsman",
+      "theme": "TrainingHall",
+      "event": "교관과 맞선다",
+      "system": "",
+      "tags": [
+        "2장 보스"
+      ],
+      "prov": true,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "교관",
+          "line": "너희는 패다. 쓰고 버리는 패.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "illust",
+          "art": "바닥에 놓인 임무서 한 장",
+          "image": "",
+          "speaker": "",
+          "line": "교관이 쓰러진 자리에 첫 임무서가 내려왔다.",
+          "after": true,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "3-1",
+      "ch": 3,
+      "n": 1,
+      "name": "화산 잠입",
+      "kind": "battle",
+      "clear": "win",
+      "enemy": "매화검수 순찰",
+      "aiStage": 11,
+      "look": "PlumSwordsman",
+      "theme": "MountHua",
+      "event": "화산에 숨어든다",
+      "system": "",
+      "tags": [],
+      "prov": true,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "illust",
+          "art": "안개 낀 화산의 돌계단",
+          "image": "",
+          "speaker": "",
+          "line": "화산. 매화 향이 검보다 먼저 닿는다.",
+          "after": false,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "3-2",
+      "ch": 3,
+      "n": 2,
+      "name": "임무서",
+      "kind": "story",
+      "clear": "always",
+      "enemy": "",
+      "aiStage": 0,
+      "look": "",
+      "theme": "",
+      "event": "임무의 내용을 확인한다",
+      "system": "",
+      "tags": [
+        "복선"
+      ],
+      "prov": true,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "illust",
+          "art": "달빛 아래 펼친 임무서",
+          "image": "",
+          "speaker": "",
+          "line": "임무서에는 한 줄뿐이다. 숨겨진 아이를 찾을 것.",
+          "after": false,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "3-3",
+      "ch": 3,
+      "n": 3,
+      "name": "한 입의 음식",
+      "kind": "story",
+      "clear": "always",
+      "enemy": "",
+      "aiStage": 0,
+      "look": "",
+      "theme": "",
+      "event": "숨겨진 아이가 음식을 나눠 준다",
+      "system": "",
+      "tags": [
+        "음식 나눔"
+      ],
+      "prov": true,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "아이",
+          "line": "배고파 보여서. 반 줄게.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "illust",
+          "art": "반으로 가른 떡을 받아 든 손",
+          "image": "",
+          "speaker": "",
+          "line": "오래전 담 밑의 맛이 났다.",
+          "after": false,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "3-4",
+      "ch": 3,
+      "n": 4,
+      "name": "아이를 지키는 자들",
+      "kind": "battle",
+      "clear": "win",
+      "enemy": "매화검수",
+      "aiStage": 13,
+      "look": "PlumSwordsman",
+      "theme": "MountHua",
+      "event": "아이를 지키는 검수들과 맞선다",
+      "system": "",
+      "tags": [
+        "땅에 그은 선"
+      ],
+      "prov": true,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": false,
+      "choiceText": {
+        "title": "",
+        "body": "",
+        "spare": "",
+        "kill": ""
+      },
+      "cuts": [
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "매화검수",
+          "line": "이 선은 넘지 못한다.",
+          "after": false,
+          "black": false
+        }
+      ]
+    },
+    {
+      "id": "3-5",
+      "ch": 3,
+      "n": 5,
+      "name": "매화검수 단주",
+      "kind": "boss",
+      "clear": "win",
+      "enemy": "매화검수 단주",
+      "aiStage": 15,
+      "look": "PlumSwordsman",
+      "theme": "MountHua",
+      "event": "최종 보스. 쓰러뜨린 뒤 마지막 선택을 한다",
+      "system": "마지막 선택 (정파/사파 플래그)",
+      "tags": [
+        "최종 보스",
+        "선택"
+      ],
+      "prov": true,
+      "starter": false,
+      "outcomeLabel": "",
+      "choice": true,
+      "choiceText": {
+        "title": "검을 든 손이 멈춘다",
+        "body": "1부에서 단 한 번 하는 선택이다. 결과는 플래그로 저장된다.",
+        "spare": "살린다",
+        "kill": "죽인다"
+      },
+      "cuts": [
+        {
+          "type": "close",
+          "art": "",
+          "image": "",
+          "speaker": "단주",
+          "line": "도구로 왔느냐, 사람으로 왔느냐.",
+          "after": false,
+          "black": false
+        },
+        {
+          "type": "illust",
+          "art": "무릎 꿇은 단주, 목에 닿은 검 끝",
+          "image": "",
+          "speaker": "",
+          "line": "단주가 무릎을 꿇었다. 검 끝이 그의 목에 닿아 있다.",
+          "after": true,
+          "black": false
+        }
+      ]
+    }
+  ]
+}

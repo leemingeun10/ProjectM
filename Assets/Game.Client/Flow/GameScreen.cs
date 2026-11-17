@@ -15,5 +15,7 @@ namespace Game.Client.Flow
         Battle,
         // 단련: once-a-day 외공/내공 training.
         Cultivation,
+        // 스토리: the story map and its stages (new values go at the end only; buttons store the number).
+        Story,
     }
 }

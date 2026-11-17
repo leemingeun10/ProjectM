@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36a610be10e6fa74d9d31422605c656f, type: 3}
+  m_Name: StoryArtCatalog
+  m_EditorClassIdentifier: Game.Client::Game.Client.Story.StoryArtCatalog
+  entries:
+  - key: Cut_1-1a_B1
+    image: {fileID: 2800000, guid: 31e7baf8b996dd249ae9f7cbb36dc393, type: 3}
+  - key: Cut_1-2a_B1
+    image: {fileID: 2800000, guid: d0305bf125eaf004394ba9fe90bc7a68, type: 3}

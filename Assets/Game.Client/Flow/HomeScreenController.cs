@@ -8,7 +8,8 @@ using UnityEngine.UI;
 
 namespace Game.Client.Flow
 {
-    // Main hub: 무공 제작 (draw techniques), 수련 (stages), 비무 (PvP) and 단련 (daily training).
+    // Main hub: 무공 제작 (draw techniques), 수련 (stages), 비무 (PvP), 단련 (daily training) and
+    // 스토리 (the story map, alongside 수련).
     // 비무 stays locked until the PvP unlock stage is cleared, using the same ProgressRules check
     // as the PvP lobby.
     public class HomeScreenController : MonoBehaviour
@@ -18,6 +19,7 @@ namespace Game.Client.Flow
         [SerializeField] private Button trainingButton;
         [SerializeField] private Button sparringButton;
         [SerializeField] private Button cultivationButton;
+        [SerializeField] private Button storyButton;
         [SerializeField] private Text workshopLabel;
         [SerializeField] private Text trainingLabel;
         [SerializeField] private Text sparringLabel;
@@ -29,6 +31,8 @@ namespace Game.Client.Flow
             trainingButton.onClick.AddListener(OpenTraining);
             sparringButton.onClick.AddListener(OpenSparring);
             cultivationButton.onClick.AddListener(OpenCultivation);
+            if (storyButton != null)
+                storyButton.onClick.AddListener(OpenStory);
             Refresh();
         }
 
@@ -38,6 +42,8 @@ namespace Game.Client.Flow
             trainingButton.onClick.RemoveListener(OpenTraining);
             sparringButton.onClick.RemoveListener(OpenSparring);
             cultivationButton.onClick.RemoveListener(OpenCultivation);
+            if (storyButton != null)
+                storyButton.onClick.RemoveListener(OpenStory);
         }
 
         private void OpenWorkshop() => flow.GoTo(GameScreen.Workshop);
@@ -45,6 +51,8 @@ namespace Game.Client.Flow
         private void OpenTraining() => flow.GoTo(GameScreen.Training);
 
         private void OpenCultivation() => flow.GoTo(GameScreen.Cultivation);
+
+        private void OpenStory() => flow.GoTo(GameScreen.Story);
 
         private void OpenSparring()
         {

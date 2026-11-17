@@ -18,8 +18,10 @@ namespace Game.Client.Flow
         [SerializeField] private GameObject sparringScreen;
         [SerializeField] private GameObject battleScreen;
         [SerializeField] private GameObject cultivationScreen;
-        // Overlays shown on the menu-like screens (e.g. the PvP record HUD); hidden on the title
-        // and during battle, where the HP bars take the top of the screen.
+        [SerializeField] private GameObject storyScreen;
+        // Overlays shown on the menu-like screens (e.g. the PvP record HUD); hidden on the title,
+        // during battle, where the HP bars take the top of the screen, and on the story screen,
+        // which uses the whole screen for its map and cuts.
         [SerializeField] private GameObject hudRoot;
         // Full-screen ink overlay used for the fade; blocks input while a transition runs.
         [SerializeField] private CanvasGroup fadeOverlay;
@@ -98,7 +100,9 @@ namespace Game.Client.Flow
             sparringScreen.SetActive(screen == GameScreen.Sparring);
             battleScreen.SetActive(screen == GameScreen.Battle);
             cultivationScreen.SetActive(screen == GameScreen.Cultivation);
-            hudRoot.SetActive(screen != GameScreen.Title && screen != GameScreen.Battle);
+            if (storyScreen != null)
+                storyScreen.SetActive(screen == GameScreen.Story);
+            hudRoot.SetActive(screen != GameScreen.Title && screen != GameScreen.Battle && screen != GameScreen.Story);
             strokeInput.enabled = screen == GameScreen.Workshop;
         }
     }

@@ -391,6 +391,54 @@ namespace Game.Client.Stage
             });
         }
 
+        // A story map battle (StoryStagePlayer): the same slot pick, seeded StageCatalog AI, scenery
+        // and replay as a stage, but nothing is recorded here; the story keeps its own save.
+        // starterSteps, if given, is fought with when the player has no complete slot (1-1); without
+        // it the usual popup points to 무공 제작. exitFor builds the replay's exit buttons from the
+        // outcome, so the story learns the result when the player leaves the battle screen.
+        public void PlayStoryBattle(int aiStageIndex, ArenaTheme theme, EnemyLook look,
+            IReadOnlyList<TechniqueStep> starterSteps, Func<BattleOutcome, BattleReplayController.ReplayExit> exitFor)
+        {
+            if (starterSteps != null && !HasCompleteSlot())
+            {
+                StartStoryBattle(starterSteps, aiStageIndex, theme, look, exitFor);
+                return;
+            }
+
+            PickSlotThen(slot =>
+            {
+                if (TryLoadPlayerSteps(slot, out List<TechniqueStep> playerSteps))
+                    StartStoryBattle(playerSteps, aiStageIndex, theme, look, exitFor);
+            });
+        }
+
+        private static bool HasCompleteSlot()
+        {
+            for (int slot = 1; slot <= TechniqueSlotStore.SlotCount; slot++)
+            {
+                if (TechniqueSlotStore.GetStatus(slot).State == TechniqueSlotState.Complete)
+                    return true;
+            }
+            return false;
+        }
+
+        private void StartStoryBattle(IReadOnlyList<TechniqueStep> playerSteps, int aiStageIndex, ArenaTheme theme, EnemyLook look,
+            Func<BattleOutcome, BattleReplayController.ReplayExit> exitFor)
+        {
+            StageDefinition stage = StageCatalog.Get(aiStageIndex);
+            List<TechniqueStep> aiSteps = AiTechniqueGenerator.Generate(stage.Difficulty, stage.Seed);
+            BattleResult result = BattleSimulator.Simulate(playerSteps, aiSteps);
+            LogResult($"[Story] 스토리 전투 (상대 스테이지 {stage.StageIndex}, {stage.Difficulty})", result);
+
+            BattleReplayController.ReplayExit exit = exitFor?.Invoke(result.Outcome);
+            flow.GoTo(GameScreen.Battle, () =>
+            {
+                scenery.ApplyTheme(theme);
+                enemyModel.Apply(look);
+                replayController.StartReplay(result, playerSteps, aiSteps, exit: exit);
+            });
+        }
+
         // Unlike stage clears, the PvP result is reported when the replay ends (or is closed early;
         // see BattleReplayController.StartReplay), the point a real backend would learn of it.
         private void PlayPvpWithSlot(int slot)

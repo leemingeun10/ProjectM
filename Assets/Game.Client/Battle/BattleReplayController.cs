@@ -26,6 +26,21 @@ namespace Game.Client.Battle
         private const float FastSpeed = 2f;
         private const int OutcomeFontSize = 130;
 
+        // Optional overrides for a replay that is part of something else (the story map). Every
+        // field left null keeps the normal 수련/비무 behaviour: the outcome word, and "홈으로" on the
+        // result panel and the close button.
+        public class ReplayExit
+        {
+            // Replaces the outcome word on the result panel (e.g. "기절").
+            public string OutcomeLabel;
+            // Label and action of the result panel's exit button.
+            public string ContinueLabel;
+            public Action OnContinue;
+            // Label and action of the close button in the control row.
+            public string CloseLabel;
+            public Action OnClose;
+        }
+
         [SerializeField] private GameObject replayPanel;
         [SerializeField] private Image hpFillA;
         [SerializeField] private Image hpFillB;
@@ -61,6 +76,11 @@ namespace Game.Client.Battle
         private IReadOnlyList<TechniqueCast> currentCastsB;
         private string currentResultNote;
         private Action pendingOnFinished;
+        private ReplayExit currentExit;
+        private Text closeLabel;
+        private Text resultExitLabel;
+        private string defaultCloseLabel;
+        private string defaultResultExitLabel;
         private Coroutine replayRoutine;
         private bool isPaused;
         private bool isFinished;
@@ -71,6 +91,10 @@ namespace Game.Client.Battle
             replayPanel.SetActive(false);
             resultPanel.SetActive(false);
             SetWorldHpVisible(false);
+            closeLabel = closeButton.GetComponentInChildren<Text>(true);
+            resultExitLabel = resultHomeButton.GetComponentInChildren<Text>(true);
+            defaultCloseLabel = closeLabel != null ? closeLabel.text : null;
+            defaultResultExitLabel = resultExitLabel != null ? resultExitLabel.text : null;
 
             // Same fail-once policy as StrokeAnimationPlayer: report unwired characters up front.
             var missing = new List<string>();
@@ -93,9 +117,9 @@ namespace Game.Client.Battle
             playPauseButton.onClick.AddListener(TogglePause);
             speedButton.onClick.AddListener(ToggleSpeed);
             restartButton.onClick.AddListener(Restart);
-            closeButton.onClick.AddListener(GoHome);
+            closeButton.onClick.AddListener(OnCloseClicked);
             replayAgainButton.onClick.AddListener(Restart);
-            resultHomeButton.onClick.AddListener(GoHome);
+            resultHomeButton.onClick.AddListener(OnResultExitClicked);
             flow.ScreenExited += OnScreenExited;
         }
 
@@ -104,13 +128,29 @@ namespace Game.Client.Battle
             playPauseButton.onClick.RemoveListener(TogglePause);
             speedButton.onClick.RemoveListener(ToggleSpeed);
             restartButton.onClick.RemoveListener(Restart);
-            closeButton.onClick.RemoveListener(GoHome);
+            closeButton.onClick.RemoveListener(OnCloseClicked);
             replayAgainButton.onClick.RemoveListener(Restart);
-            resultHomeButton.onClick.RemoveListener(GoHome);
+            resultHomeButton.onClick.RemoveListener(OnResultExitClicked);
             flow.ScreenExited -= OnScreenExited;
         }
 
         private void GoHome() => flow.GoTo(GameScreen.Home);
+
+        private void OnCloseClicked()
+        {
+            if (currentExit?.OnClose != null)
+                currentExit.OnClose();
+            else
+                GoHome();
+        }
+
+        private void OnResultExitClicked()
+        {
+            if (currentExit?.OnContinue != null)
+                currentExit.OnContinue();
+            else
+                GoHome();
+        }
 
         private void OnScreenExited(GameScreen screen)
         {
@@ -125,11 +165,18 @@ namespace Game.Client.Battle
         // onFinished runs exactly once: when the replay first reaches its end, or earlier if the
         // replay is closed or replaced first, so skipping a replay cannot skip its consequences.
         // castsA/castsB, if given, mark the turns each side performs a technique on (see TechniqueCast).
+        // exit, if given, overrides the outcome word and where the exit buttons go (see ReplayExit).
         public void StartReplay(BattleResult result, IReadOnlyList<TechniqueStep> stepsA, IReadOnlyList<TechniqueStep> stepsB,
             string resultNote = null, Action onFinished = null,
-            IReadOnlyList<TechniqueCast> castsA = null, IReadOnlyList<TechniqueCast> castsB = null)
+            IReadOnlyList<TechniqueCast> castsA = null, IReadOnlyList<TechniqueCast> castsB = null,
+            ReplayExit exit = null)
         {
             FireFinished();
+            currentExit = exit;
+            if (closeLabel != null)
+                closeLabel.text = exit?.CloseLabel ?? defaultCloseLabel;
+            if (resultExitLabel != null)
+                resultExitLabel.text = exit?.ContinueLabel ?? defaultResultExitLabel;
             currentResult = result;
             currentStepsA = stepsA;
             currentStepsB = stepsB;
@@ -292,7 +339,7 @@ namespace Game.Client.Battle
 
             // The base font size is the note's; the outcome is enlarged inline so the note lines
             // keep their own (smaller) line height.
-            string outcome = $"<size={OutcomeFontSize}>{DescribeOutcome(result.Outcome)}</size>";
+            string outcome = $"<size={OutcomeFontSize}>{currentExit?.OutcomeLabel ?? DescribeOutcome(result.Outcome)}</size>";
             resultText.text = string.IsNullOrEmpty(currentResultNote)
                 ? outcome
                 : $"{outcome}\n{currentResultNote}";

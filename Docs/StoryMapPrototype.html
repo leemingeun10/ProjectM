@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>검로 스토리 맵</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Brush+Script&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E7E5E0; --paper-2:#DAD8D2; --wash:#C6C7C4;
+  --ink:#262A2E; --ink-soft:#646B71;
+  --ochre:#A98D58; --slate:#5E7080; --jade:#0E9C84;
+  --veil:rgba(38,42,46,.55);
+  --body:"Gowun Batang","Nanum Myeongjo","Apple SD Gothic Neo","Malgun Gothic",serif;
+  --brush:"Nanum Brush Script","Gowun Batang","Apple SD Gothic Neo",cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#1C2024; --paper-2:#252A2F; --wash:#353C42;
+    --ink:#E4E2DC; --ink-soft:#9BA2A7;
+    --ochre:#B59A66; --slate:#8298A8; --jade:#2CC4A8;
+    --veil:rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#1C2024; --paper-2:#252A2F; --wash:#353C42;
+  --ink:#E4E2DC; --ink-soft:#9BA2A7;
+  --ochre:#B59A66; --slate:#8298A8; --jade:#2CC4A8;
+  --veil:rgba(0,0,0,.6);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{height:100%;margin:0;background:var(--paper-2);color:var(--ink);
+  font-family:var(--body);font-size:16px;line-height:1.6;
+  display:flex;justify-content:center}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--jade);outline-offset:2px}
+
+.app{position:relative;width:min(100%,430px);height:100%;background:var(--paper);
+  display:flex;flex-direction:column;overflow:hidden}
+
+/* 머리말 */
+.top{padding:14px 18px 0}
+.top-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+h1{font-family:var(--brush);font-weight:400;font-size:2.1rem;line-height:1;margin:0}
+.progress{font-size:.875rem;color:var(--ink-soft);white-space:nowrap}
+.progress b{color:var(--ink);font-weight:700}
+.flag{color:var(--jade);font-weight:700}
+.tabs{display:flex;gap:4px;margin-top:12px;border-bottom:1px solid var(--wash)}
+.tab{flex:1;background:none;border:0;padding:8px 4px 10px;text-align:left;
+  border-bottom:3px solid transparent;margin-bottom:-1px;color:var(--ink-soft)}
+.tab .num{display:block;font-size:.8125rem}
+.tab .ttl{display:block;font-size:1rem;font-weight:700}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+
+/* 지도 */
+.map{flex:1;min-height:0;position:relative}
+.map svg{display:block;width:100%;height:100%}
+.node{cursor:pointer}
+.node:focus-visible{outline:none}
+.node:focus-visible .hit{stroke:var(--jade);stroke-width:2}
+.node-label{font-family:var(--body);font-size:13px;fill:var(--ink)}
+.node-label .id{font-weight:700}
+.node.locked .node-label{fill:var(--ink-soft)}
+
+.foot{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:8px 18px 12px;font-size:.8125rem;color:var(--ink-soft)}
+.legend{display:flex;gap:12px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend svg{width:14px;height:14px}
+.link{background:none;border:0;padding:4px 0;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px}
+
+/* 스테이지 안내 */
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);
+  border-top:2px solid var(--ink);padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));
+  transform:translateY(105%);transition:transform .22s ease;z-index:3}
+.sheet.open{transform:none}
+.scrim{position:absolute;inset:0;background:var(--veil);opacity:0;pointer-events:none;transition:opacity .22s;z-index:2}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet h2{margin:0;font-size:1.375rem;line-height:1.3}
+.sheet .kind{font-size:.875rem;color:var(--ink-soft);margin:2px 0 10px}
+.sheet dl{margin:0 0 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.9375rem}
+.sheet dt{color:var(--ink-soft)}
+.sheet dd{margin:0}
+.prov{font-size:.8125rem;color:var(--ochre);margin:0 0 12px}
+.row{display:flex;gap:10px}
+.btn{flex:1;padding:12px 14px;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);
+  font-weight:700;border-radius:2px}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* 재생 화면 */
+.stage{position:absolute;inset:0;background:var(--paper);z-index:5;display:none;flex-direction:column}
+.stage.open{display:flex}
+.stage-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;font-size:.875rem;color:var(--ink-soft)}
+.stage-body{flex:1;min-height:0;display:flex;flex-direction:column;background:none;border:0;padding:0;text-align:left;width:100%}
+.art{flex:1;min-height:0;position:relative;overflow:hidden;background:var(--paper-2)}
+.art svg{position:absolute;inset:0;width:100%;height:100%}
+.art .cap{position:absolute;left:18px;right:18px;bottom:14px;font-size:.875rem;color:var(--ink-soft)}
+.art .cap b{display:block;color:var(--ink);font-size:.9375rem}
+.art.black{background:#111417}
+.art.black .cap, .art.black .cap b{color:#C9CCCE}
+.say{padding:16px 18px 20px;min-height:132px;border-top:2px solid var(--ink)}
+.say .who{font-weight:700;margin-bottom:2px}
+.say .who.me{color:var(--jade)}
+.say p{margin:0;font-size:1.0625rem;max-width:34em}
+.say .tap{display:block;margin-top:10px;font-size:.8125rem;color:var(--ink-soft)}
+.panel{flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 22px;gap:14px}
+.panel h3{font-family:var(--brush);font-weight:400;font-size:2.4rem;line-height:1.1;margin:0}
+.panel p{margin:0;max-width:30em}
+.memo{font-size:.8125rem;color:var(--ochre)}
+.choice .btn{padding:18px 14px;font-size:1.125rem}
+
+.toast{position:absolute;left:50%;top:76px;transform:translate(-50%,-12px);background:var(--ink);color:var(--paper);
+  padding:8px 16px;font-size:.875rem;border-radius:2px;opacity:0;transition:opacity .25s,transform .25s;z-index:6;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion: reduce){
+  .sheet,.scrim,.toast{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="top-row">
+      <h1>검로 스토리 맵</h1>
+      <div class="progress" id="progress"></div>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+  </header>
+
+  <div class="map" id="map"></div>
+
+  <footer class="foot">
+    <div class="legend" aria-hidden="true">
+      <span><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 10 10 4" stroke="currentColor" stroke-width="1.5"/></svg>전투</span>
+      <span><svg viewBox="0 0 14 14"><rect x="3" y="3" width="8" height="8" transform="rotate(45 7 7)" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>이야기</span>
+      <span><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="7" cy="7" r="6.2" fill="none" stroke="currentColor" stroke-width="1"/></svg>보스</span>
+      <span><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.4 2"/></svg>패배 전용</span>
+    </div>
+    <button class="link" id="reset">처음부터</button>
+  </footer>
+
+  <div class="scrim" id="scrim"></div>
+  <section class="sheet" id="sheet" aria-live="polite"></section>
+  <section class="stage" id="stage"></section>
+  <div class="toast" id="toast" role="status"></div>
+</div>
+
+<script>
+/* ───────── 데이터 ─────────
+   CHAPTERS: 장 정보와 노드 좌표(360×600 viewBox, 아래에서 위로 진행)
+   ST: 스테이지. kind = battle | story | boss | loss, clear = win | always
+   cuts: {type: illust | close, art, speaker, line, after, black}
+         after:true 는 전투 뒤에 나오는 컷, black:true 는 암전 처리 */
+const CHAPTERS = [
+  {ch:1, title:'길바닥', sub:'낭인', scene:'street',
+   nodes:[[92,540],[252,432],[118,322],[246,208],[150,92]]},
+  {ch:2, title:'암살단', sub:'흑의검객', scene:'wall',
+   nodes:[[262,540],[112,436],[236,326],[104,212],[206,92]]},
+  {ch:3, title:'화산', sub:'매화검수', scene:'peak',
+   nodes:[[96,540],[240,440],[128,330],[250,214],[168,88]]}
+];
+
+const ME = '???';
+const ST = [
+  {id:'1-1', ch:1, n:1, name:'눈을 뜨다', kind:'battle', clear:'win',
+   enemy:'길바닥 낭인', event:'기억이 없는 주인공이 깨어난다', system:'궤적 그리기 튜토리얼',
+   tags:['튜토리얼'], prov:false,
+   cuts:[
+    {type:'illust', art:'컷 1-1a. 담 밑 길바닥에서 눈을 뜨는 소년, 머리띠의 청록 천', line:'눈을 떴다. 이름도, 여기가 어디인지도 떠오르지 않는다.'},
+    {type:'close', speaker:'길바닥 낭인', line:'꼬마, 거기는 내 자리다. 비켜.'},
+    {type:'close', speaker:ME, line:'……손이 먼저 움직인다.'},
+    {type:'close', speaker:'길바닥 낭인', line:'그 선은 어디서 배웠냐.', after:true},
+    {type:'illust', art:'손에 쥔 나뭇가지를 내려다보는 소년', line:'모른다. 몸이 기억하고 있을 뿐이다.', after:true}
+   ]},
+  {id:'1-2', ch:1, n:2, name:'먹을 것을 찾아서', kind:'story', clear:'always',
+   enemy:null, event:'동냥으로 버티다 만두를 들고 달아난다', system:null,
+   tags:['스토리 전용'], prov:false,
+   cuts:[
+    {type:'illust', art:'장터 구석에서 손을 내민 소년, 지나치는 발들', line:'배가 고팠다. 손을 내밀어도 돌아오는 것은 없었다.'},
+    {type:'close', speaker:'만두집 주인', line:'거기 서! 저 녀석 잡아라!'},
+    {type:'illust', art:'컷 1-2a. 만두를 들고 달아나는 소년, 빗자루를 든 주인의 뒷모습', line:'식은 만두 하나가 그날의 전부였다.'}
+   ]},
+  {id:'1-3', ch:1, n:3, name:'한 조각의 떡, 낯선 시선', kind:'story', clear:'always',
+   enemy:null, event:'거지(가명1)를 만난다. 평범한 아저씨(가명2)가 음식을 나눠 준다', system:null,
+   tags:['음식 나눔', '복선'], prov:false,
+   cuts:[
+    {type:'illust', art:'컷 1-3a. 담 밑에 나란히 앉은 거지와 소년, 반으로 가른 떡', line:'담 밑에는 먼저 온 사람이 있었다.'},
+    {type:'close', speaker:'가명1', line:'혼자 먹으면 체한다. 반은 네 거다.'},
+    {type:'close', speaker:ME, line:'……왜 줘요.'},
+    {type:'close', speaker:'가명1', line:'나눠야 내일도 얻어먹지.'},
+    {type:'illust', art:'컷 1-3b. 떡을 건네는 평범한 아저씨, 아이에게 오래 머무는 시선', line:'지나가던 아저씨가 걸음을 멈췄다.'},
+    {type:'close', speaker:'가명2', line:'많이 먹어라. 눈이 좋구나, 너.'}
+   ]},
+  {id:'1-4', ch:1, n:4, name:'몽둥이와 삼재', kind:'battle', clear:'win',
+   enemy:'가명1 (대련)', event:'가명1의 동작을 쉽게 따라 한다. 삼재검법을 배운다', system:'무공 제작 튜토리얼',
+   tags:['튜토리얼', '땅에 그은 선'], prov:false,
+   cuts:[
+    {type:'close', speaker:'가명1', line:'개방에서 굴러먹던 시절에 배운 거다. 삼재검법. 셋만 알면 된다.'},
+    {type:'illust', art:'컷 1-4a. 땅에 선을 긋는 거지, 몽둥이를 든 소년', line:'한 번 본 선을, 몸이 그대로 따라 그었다.'},
+    {type:'close', speaker:'가명1', line:'한 번 보고 그걸 해? 너 대체 뭐 하던 놈이냐.', after:true}
+   ]},
+  {id:'1-5', ch:1, n:5, name:'데려가는 자들', kind:'loss', clear:'always',
+   enemy:'흑의검객 둘 (엑스트라 1, 2)', event:'가명1이 쓰러지고, 주인공은 맞서다 기절해 납치된다', system:'이길 수 없는 전투',
+   tags:['패배 전용', '납치'], prov:false,
+   cuts:[
+    {type:'illust', art:'컷 1-5a. 골목을 막아선 검은 옷의 두 사람', line:'해 질 무렵, 골목 끝이 막혔다.'},
+    {type:'close', speaker:'흑의검객', line:'그 아이다. 데려간다.'},
+    {type:'close', speaker:'가명1', line:'애는 건드리지 마라!'},
+    {type:'illust', black:true, art:'암전. 둔탁한 소리', line:'눈을 떴을 때, 가명1은 바닥에 쓰러져 있었다.'},
+    {type:'illust', art:'컷 1-5b. 쓰러진 소년, 땅에 떨어진 몽둥이, 멀어지는 골목', line:'선이 닿지 않는다. 시야가 어두워진다.', after:true},
+    {type:'close', speaker:'가명2 (목소리)', line:'다치게 하지 말라고 했을 텐데.', after:true}
+   ]},
+
+  {id:'2-1', ch:2, n:1, name:'번호가 붙다', kind:'story', clear:'always',
+   enemy:null, event:'이름 대신 번호를 받는다', system:null, tags:[], prov:true,
+   cuts:[
+    {type:'illust', art:'어두운 방, 줄지어 선 아이들', line:'눈을 뜨자 이름 대신 번호가 주어졌다.'},
+    {type:'close', speaker:'교관', line:'오늘부터 너는 열일곱이다.'}
+   ]},
+  {id:'2-2', ch:2, n:2, name:'지급복과 청록 천', kind:'story', clear:'always',
+   enemy:null, event:'검은 지급복을 받지만 청록 천은 지킨다', system:null, tags:['청록 천'], prov:true,
+   cuts:[
+    {type:'illust', art:'검은 지급복 위에 묶은 청록 머리띠', line:'옷은 바뀌었다. 머리띠만은 내놓지 않았다.'},
+    {type:'close', speaker:'교관', line:'그 천은 뭐냐. 됐다, 묶어 둬라.'}
+   ]},
+  {id:'2-3', ch:2, n:3, name:'번호로 불리는 아이들', kind:'battle', clear:'win',
+   enemy:'훈련생', event:'번호로만 불리는 아이들과 겨룬다', system:null, tags:['음식 나눔'], prov:true,
+   cuts:[
+    {type:'close', speaker:'아홉', line:'나는 아홉이야. 너는?'},
+    {type:'illust', art:'반으로 나눈 밥그릇', line:'밥을 반으로 나눴다. 누구에게 배운 버릇이었더라.', after:true}
+   ]},
+  {id:'2-4', ch:2, n:4, name:'졸업 비무', kind:'battle', clear:'win',
+   enemy:'훈련생 수석', event:'이긴 쪽만 밖으로 나간다', system:null, tags:[], prov:true,
+   cuts:[
+    {type:'close', speaker:'교관', line:'이긴 쪽만 나간다.'}
+   ]},
+  {id:'2-5', ch:2, n:5, name:'버릴 패', kind:'boss', clear:'win',
+   enemy:'교관', event:'교관과 맞선다', system:null, tags:['2장 보스'], prov:true,
+   cuts:[
+    {type:'close', speaker:'교관', line:'너희는 패다. 쓰고 버리는 패.'},
+    {type:'illust', art:'바닥에 놓인 임무서 한 장', line:'교관이 쓰러진 자리에 첫 임무서가 내려왔다.', after:true}
+   ]},
+
+  {id:'3-1', ch:3, n:1, name:'화산 잠입', kind:'battle', clear:'win',
+   enemy:'매화검수 순찰', event:'화산에 숨어든다', system:null, tags:[], prov:true,
+   cuts:[
+    {type:'illust', art:'안개 낀 화산의 돌계단', line:'화산. 매화 향이 검보다 먼저 닿는다.'}
+   ]},
+  {id:'3-2', ch:3, n:2, name:'임무서', kind:'story', clear:'always',
+   enemy:null, event:'임무의 내용을 확인한다', system:null, tags:['복선'], prov:true,
+   cuts:[
+    {type:'illust', art:'달빛 아래 펼친 임무서', line:'임무서에는 한 줄뿐이다. 숨겨진 아이를 찾을 것.'}
+   ]},
+  {id:'3-3', ch:3, n:3, name:'한 입의 음식', kind:'story', clear:'always',
+   enemy:null, event:'숨겨진 아이가 음식을 나눠 준다', system:null, tags:['음식 나눔'], prov:true,
+   cuts:[
+    {type:'close', speaker:'아이', line:'배고파 보여서. 반 줄게.'},
+    {type:'illust', art:'반으로 가른 떡을 받아 든 손', line:'오래전 담 밑의 맛이 났다.'}
+   ]},
+  {id:'3-4', ch:3, n:4, name:'아이를 지키는 자들', kind:'battle', clear:'win',
+   enemy:'매화검수', event:'아이를 지키는 검수들과 맞선다', system:null, tags:['땅에 그은 선'], prov:true,
+   cuts:[
+    {type:'close', speaker:'매화검수', line:'이 선은 넘지 못한다.'}
+   ]},
+  {id:'3-5', ch:3, n:5, name:'매화검수 단주', kind:'boss', clear:'win',
+   enemy:'매화검수 단주', event:'최종 보스. 쓰러뜨린 뒤 마지막 선택을 한다', system:'마지막 선택 (정파/사파 플래그)',
+   tags:['최종 보스', '선택'], prov:true, choice:true,
+   cuts:[
+    {type:'close', speaker:'단주', line:'도구로 왔느냐, 사람으로 왔느냐.'},
+    {type:'illust', art:'무릎 꿇은 단주, 목에 닿은 검 끝', line:'단주가 무릎을 꿇었다. 검 끝이 그의 목에 닿아 있다.', after:true}
+   ]}
+];
+
+const KIND = {battle:'전투', story:'이야기', boss:'보스전', loss:'패배 전용 전투'};
+const FLAG = {jeong:'정파', sa:'사파'};
+
+/* ───────── 저장 ───────── */
+const KEY = 'storymap.v1';
+let save = {v:1, n:0, flag:null};
+try{
+  const raw = JSON.parse(localStorage.getItem(KEY));
+  if(raw && raw.v === 1 && Number.isInteger(raw.n)) save = {v:1, n:Math.max(0, Math.min(ST.length, raw.n)), flag:raw.flag || null};
+}catch(e){}
+function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(save)); }catch(e){} }
+
+/* ───────── 상태 ───────── */
+let curCh = Math.min(3, Math.floor(Math.min(save.n, ST.length-1) / 5) + 1);
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const stageIndex = st => ST.indexOf(st);
+const stateOf = st => { const i = stageIndex(st); return i < save.n ? 'cleared' : i === save.n ? 'current' : 'locked'; };
+
+/* ───────── 머리말 ───────── */
+function renderTop(){
+  $('progress').innerHTML = '<b>' + save.n + '</b> / ' + ST.length + ' 클리어' +
+    (save.flag ? ' <span class="flag">' + FLAG[save.flag] + '</span>' : '');
+  $('tabs').innerHTML = CHAPTERS.map(c =>
+    '<button class="tab" role="tab" aria-selected="' + (c.ch === curCh) + '" data-ch="' + c.ch + '">' +
+    '<span class="num">' + c.ch + '장</span><span class="ttl">' + c.title + '</span></button>').join('');
+}
+$('tabs').addEventListener('click', e => {
+  const b = e.target.closest('.tab'); if(!b) return;
+  curCh = +b.dataset.ch; renderTop(); renderMap();
+});
+
+/* ───────── 지도 ───────── */
+function scenery(kind){
+  const w = 'fill="var(--wash)"', s = 'fill="var(--slate)"', o = 'fill="var(--ochre)"';
+  let g = '<g filter="url(#wash)" opacity=".55">';
+  if(kind === 'street'){
+    g += '<path d="M-10 505 L70 470 L140 505 Z" '+s+' opacity=".5"/><rect x="0" y="505" width="130" height="70" '+w+'/>' +
+         '<path d="M230 150 L300 118 L372 150 Z" '+s+' opacity=".5"/><rect x="246" y="150" width="120" height="64" '+w+'/>' +
+         '<ellipse cx="300" cy="330" rx="70" ry="26" '+o+' opacity=".35"/><ellipse cx="60" cy="250" rx="60" ry="22" '+w+'/>';
+  }else if(kind === 'wall'){
+    g += '<rect x="-10" y="60" width="380" height="46" '+s+' opacity=".45"/><rect x="-10" y="372" width="150" height="40" '+w+'/>' +
+         '<rect x="250" y="250" width="120" height="40" '+w+'/><rect x="20" y="106" width="16" height="120" '+s+' opacity=".35"/>' +
+         '<rect x="320" y="106" width="16" height="140" '+s+' opacity=".35"/><ellipse cx="180" cy="560" rx="150" ry="24" '+o+' opacity=".3"/>';
+  }else{
+    g += '<path d="M-10 250 L70 120 L130 210 L190 60 L260 190 L310 130 L372 240 Z" '+s+' opacity=".45"/>' +
+         '<path d="M-10 420 L90 330 L170 400 L260 340 L372 420 Z" '+w+'/>' +
+         '<ellipse cx="290" cy="520" rx="80" ry="22" '+o+' opacity=".3"/>' +
+         '<circle cx="46" cy="96" r="5" '+o+'/><circle cx="60" cy="110" r="4" '+o+'/><circle cx="38" cy="116" r="3.5" '+o+'/>';
+  }
+  return g + '</g>';
+}
+function seg(a, b){
+  const my = (a[1] + b[1]) / 2;
+  return 'M' + a[0] + ' ' + a[1] + ' C' + a[0] + ' ' + my + ' ' + b[0] + ' ' + my + ' ' + b[0] + ' ' + b[1];
+}
+function marker(st, x, y, state){
+  const stroke = state === 'locked' ? 'var(--ink-soft)' : 'var(--ink)';
+  const fill = state === 'cleared' ? 'var(--ink)' : 'var(--paper)';
+  const mark = state === 'cleared' ? 'var(--paper)' : stroke;
+  let m = '';
+  if(st.kind === 'story'){
+    m = '<rect x="'+(x-11)+'" y="'+(y-11)+'" width="22" height="22" transform="rotate(45 '+x+' '+y+')" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2.5"/>';
+  }else if(st.kind === 'boss'){
+    m = '<circle cx="'+x+'" cy="'+y+'" r="24" fill="var(--paper)" stroke="'+stroke+'" stroke-width="1.5"/>' +
+        '<circle cx="'+x+'" cy="'+y+'" r="17" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2.5"/>' +
+        '<path d="M'+(x-7)+' '+(y+7)+' L'+(x+7)+' '+(y-7)+' M'+(x-7)+' '+(y-7)+' L'+(x+7)+' '+(y+7)+'" stroke="'+mark+'" stroke-width="2.5" stroke-linecap="round"/>';
+  }else{
+    m = '<circle cx="'+x+'" cy="'+y+'" r="15" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2.5"' + (st.kind === 'loss' ? ' stroke-dasharray="5 4"' : '') + '/>' +
+        '<path d="M'+(x-6)+' '+(y+6)+' L'+(x+6)+' '+(y-6)+'" stroke="'+mark+'" stroke-width="2.5" stroke-linecap="round"/>';
+  }
+  if(state === 'current'){
+    const top = y - (st.kind === 'boss' ? 26 : 18);
+    m += '<g stroke="var(--jade)" stroke-width="5" stroke-linecap="round" fill="none">' +
+         '<path d="M'+x+' '+top+' q-12 -12 -20 -1"/><path d="M'+x+' '+top+' q12 -15 22 -6"/></g>' +
+         '<circle cx="'+x+'" cy="'+top+'" r="4.5" fill="var(--jade)"/>';
+  }
+  return m;
+}
+function renderMap(){
+  const c = CHAPTERS[curCh-1];
+  const list = ST.filter(s => s.ch === curCh);
+  let h = '<svg viewBox="0 0 360 600" preserveAspectRatio="xMidYMid meet" role="group" aria-label="'+c.ch+'장 '+c.title+' 스테이지 지도">' +
+    '<defs><filter id="wash" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="2" seed="7"/>' +
+    '<feDisplacementMap in="SourceGraphic" scale="26"/><feGaussianBlur stdDeviation="5"/></filter>' +
+    '<filter id="brush" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="1" seed="3"/><feDisplacementMap in="SourceGraphic" scale="3.5"/></filter></defs>';
+  h += scenery(c.scene);
+  h += '<text x="344" y="50" text-anchor="end" style="font-family:var(--brush);font-size:44px" fill="var(--ink)" opacity=".16">' + c.sub + '</text>';
+  h += '<g filter="url(#brush)" fill="none" stroke-linecap="round">';
+  for(let i = 0; i < 4; i++){
+    const done = stateOf(list[i]) === 'cleared';
+    h += '<path d="' + seg(c.nodes[i], c.nodes[i+1]) + '" stroke="' + (done ? 'var(--ink)' : 'var(--wash)') + '" stroke-width="' + (done ? 6 : 5) + '"' + (done ? '' : ' stroke-dasharray="2 12"') + '/>';
+  }
+  h += '</g>';
+  list.forEach((st, i) => {
+    const [x, y] = c.nodes[i], state = stateOf(st);
+    const right = x < 180, off = st.kind === 'boss' ? 34 : 26;
+    const tx = right ? x + off : x - off;
+    h += '<g class="node ' + state + '" role="button" tabindex="0" data-id="' + st.id + '" aria-label="' + st.id + ' ' + esc(st.name) + ', ' + KIND[st.kind] + ', ' + (state === 'cleared' ? '클리어' : state === 'current' ? '진행할 차례' : '잠김') + '"' + (state === 'locked' ? ' opacity=".6"' : '') + '>' +
+      '<circle class="hit" cx="'+x+'" cy="'+y+'" r="32" fill="transparent"/>' + marker(st, x, y, state) +
+      '<text class="node-label" x="'+tx+'" y="'+(y-2)+'" text-anchor="'+(right ? 'start' : 'end')+'"><tspan class="id">'+st.id+'</tspan></text>' +
+      '<text class="node-label" x="'+tx+'" y="'+(y+15)+'" text-anchor="'+(right ? 'start' : 'end')+'">'+esc(st.name)+'</text></g>';
+  });
+  $('map').innerHTML = h + '</svg>';
+}
+$('map').addEventListener('click', e => { const g = e.target.closest('.node'); if(g) openSheet(g.dataset.id); });
+$('map').addEventListener('keydown', e => {
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  const g = e.target.closest('.node'); if(g){ e.preventDefault(); openSheet(g.dataset.id); }
+});
+
+/* ───────── 스테이지 안내 ───────── */
+function openSheet(id){
+  const st = ST.find(s => s.id === id), state = stateOf(st);
+  const rows = [
+    ['클리어 조건', st.clear === 'win' ? '전투 승리' : st.kind === 'loss' ? '승패와 상관없이 진행' : '끝까지 보기'],
+    st.enemy && ['상대', st.enemy],
+    ['사건', st.event],
+    st.system && ['시스템', st.system],
+    st.tags.length && ['태그', st.tags.join(', ')],
+    ['컷 수', st.cuts.length + '컷']
+  ].filter(Boolean);
+  $('sheet').innerHTML =
+    '<h2>' + st.id + ' ' + esc(st.name) + '</h2>' +
+    '<p class="kind">' + KIND[st.kind] + '</p>' +
+    '<dl>' + rows.map(r => '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>').join('') + '</dl>' +
+    (st.prov ? '<p class="prov">스테이지 이름과 대사는 가제다.</p>' : '') +
+    '<div class="row"><button class="btn ghost" data-act="close">닫기</button>' +
+    '<button class="btn" data-act="play"' + (state === 'locked' ? ' disabled' : '') + '>' +
+    (state === 'locked' ? '앞 스테이지를 먼저 클리어' : state === 'cleared' ? '다시 보기' : '스테이지 시작') + '</button></div>';
+  $('sheet').dataset.id = id;
+  $('sheet').classList.add('open'); $('scrim').classList.add('open');
+  $('sheet').querySelector('[data-act="' + (state === 'locked' ? 'close' : 'play') + '"]').focus();
+}
+function closeSheet(){ $('sheet').classList.remove('open'); $('scrim').classList.remove('open'); }
+$('scrim').addEventListener('click', closeSheet);
+$('sheet').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  const id = $('sheet').dataset.id; closeSheet();
+  if(b.dataset.act === 'play') play(ST.find(s => s.id === id));
+});
+
+/* ───────── 재생 ───────── */
+let run = null;
+function play(st){
+  const steps = [];
+  st.cuts.filter(c => !c.after).forEach(c => steps.push({t:'cut', c}));
+  if(st.kind !== 'story') steps.push({t:'battle'});
+  st.cuts.filter(c => c.after).forEach(c => steps.push({t:'cut', c}));
+  if(st.choice) steps.push({t:'choice'});
+  run = {st, steps, i:0, cutNo:0, cutTotal:st.cuts.length};
+  $('stage').classList.add('open'); step();
+}
+function head(extra){
+  return '<div class="stage-head"><span>' + run.st.id + ' ' + esc(run.st.name) + (extra ? ', ' + extra : '') +
+    '</span><button class="link" data-act="quit">지도로</button></div>';
+}
+function artSvg(c){
+  if(c.black) return '';
+  if(c.type === 'close'){
+    return '<svg viewBox="0 0 360 400" preserveAspectRatio="xMidYMid slice"><defs><filter id="pw"><feTurbulence type="fractalNoise" baseFrequency=".015" numOctaves="2" seed="11"/><feDisplacementMap in="SourceGraphic" scale="30"/><feGaussianBlur stdDeviation="6"/></filter></defs>' +
+      '<g filter="url(#pw)"><ellipse cx="180" cy="420" rx="150" ry="150" fill="var(--slate)" opacity=".5"/><circle cx="180" cy="190" r="78" fill="var(--wash)"/>' +
+      (c.speaker === ME ? '<rect x="100" y="140" width="160" height="18" fill="var(--jade)"/>' : '') + '</g></svg>';
+  }
+  return '<svg viewBox="0 0 360 400" preserveAspectRatio="xMidYMid slice"><defs><filter id="pw"><feTurbulence type="fractalNoise" baseFrequency=".012" numOctaves="2" seed="5"/><feDisplacementMap in="SourceGraphic" scale="40"/><feGaussianBlur stdDeviation="7"/></filter></defs>' +
+    '<g filter="url(#pw)"><rect x="-20" y="250" width="400" height="170" fill="var(--ochre)" opacity=".4"/><path d="M-20 250 L90 150 L190 230 L290 130 L380 250 Z" fill="var(--slate)" opacity=".45"/>' +
+    '<ellipse cx="120" cy="90" rx="110" ry="36" fill="var(--wash)"/><ellipse cx="180" cy="300" rx="34" ry="54" fill="var(--ink)" opacity=".5"/><rect x="158" y="246" width="44" height="8" fill="var(--jade)"/></g></svg>';
+}
+function step(){
+  const s = run.steps[run.i], el = $('stage');
+  if(!s){ return finish(); }
+  if(s.t === 'cut'){
+    run.cutNo = run.steps.slice(0, run.i + 1).filter(x => x.t === 'cut').length;
+    const c = s.c, me = c.speaker === ME;
+    el.innerHTML = head(run.cutNo + '/' + run.cutTotal + '컷') +
+      '<button class="stage-body" data-act="next" aria-label="다음 컷">' +
+      '<div class="art' + (c.black ? ' black' : '') + '">' + artSvg(c) +
+      '<div class="cap"><b>' + (c.type === 'close' ? '3D 클로즈업 대화 자리' : c.black ? '암전' : '일러스트 자리') + '</b>' + (c.art ? esc(c.art) : esc(c.speaker) + '의 얼굴') + '</div></div>' +
+      '<div class="say">' + (c.type === 'close' ? '<div class="who' + (me ? ' me' : '') + '">' + esc(c.speaker) + '</div>' : '') +
+      '<p>' + esc(c.line) + '</p><span class="tap">화면을 누르면 다음으로</span></div></button>';
+    el.querySelector('[data-act="next"]').focus();
+  }else if(s.t === 'battle'){
+    const st = run.st, always = st.clear === 'always';
+    el.innerHTML = head('전투') +
+      '<div class="panel"><h3>' + esc(st.enemy) + '</h3>' +
+      '<p>실제 게임에서는 검로를 그린 뒤 자동 전투가 진행되는 자리다. 여기서는 결과만 골라 흐름을 확인한다.</p>' +
+      (st.system ? '<p class="memo">시스템: ' + esc(st.system) + '</p>' : '') +
+      (always ? '<p class="memo">설계 메모: 이기든 지든 클리어로 처리하고 주인공은 기절한다.</p>' : '') +
+      '<div class="row"><button class="btn" data-act="win">승리로 진행</button><button class="btn ghost" data-act="lose">패배로 진행</button></div></div>';
+    el.querySelector('[data-act="win"]').focus();
+  }else if(s.t === 'lost'){
+    el.innerHTML = head('패배') +
+      '<div class="panel"><h3>패배</h3><p>이 스테이지는 이겨야 다음으로 넘어간다.</p>' +
+      '<div class="row"><button class="btn" data-act="retry">다시 싸우기</button><button class="btn ghost" data-act="quit">지도로</button></div></div>';
+    el.querySelector('[data-act="retry"]').focus();
+  }else if(s.t === 'choice'){
+    el.innerHTML = head('마지막 선택') +
+      '<div class="panel choice"><h3>검을 든 손이 멈춘다</h3><p>1부에서 단 한 번 하는 선택이다. 결과는 플래그로 저장된다.</p>' +
+      '<div class="row"><button class="btn" data-act="spare">살린다</button><button class="btn ghost" data-act="kill">죽인다</button></div>' +
+      '<p class="memo">살린다는 정파, 죽인다는 사파 플래그로 저장한다.</p></div>';
+    el.querySelector('[data-act="spare"]').focus();
+  }else if(s.t === 'end'){
+    el.innerHTML = head('1부 끝') +
+      '<div class="panel"><h3>1부 끝</h3><p>저장된 플래그는 ' + FLAG[save.flag] + '다. 이후 이야기에 미치는 영향은 아직 정하지 않았다.</p>' +
+      '<div class="row"><button class="btn" data-act="quit">지도로</button></div></div>';
+    el.querySelector('[data-act="quit"]').focus();
+  }
+}
+function finish(){
+  const i = stageIndex(run.st), first = i === save.n;
+  if(first){ save.n = i + 1; persist(); }
+  const id = run.st.id; quit();
+  if(first){
+    if(save.n < ST.length) curCh = ST[save.n].ch;
+    toast(id + ' 클리어');
+  }
+  renderTop(); renderMap();
+}
+function quit(){ $('stage').classList.remove('open'); $('stage').innerHTML = ''; run = null; }
+$('stage').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if(!b || !run) return;
+  const a = b.dataset.act;
+  if(a === 'quit'){ if(run.steps[run.i] && run.steps[run.i].t === 'end'){ run.i++; return step(); } quit(); renderTop(); renderMap(); }
+  else if(a === 'next' || a === 'win'){ run.i++; step(); }
+  else if(a === 'lose'){
+    if(run.st.clear === 'always'){ run.i++; step(); }
+    else { run.steps.splice(run.i + 1, 0, {t:'lost'}); run.i++; step(); }
+  }
+  else if(a === 'retry'){ run.steps.splice(run.i, 1); run.i--; step(); }
+  else if(a === 'spare' || a === 'kill'){
+    save.flag = a === 'spare' ? 'jeong' : 'sa'; persist();
+    run.steps.splice(run.i + 1, 0, {t:'end'}); run.i++; step();
+  }
+});
+
+/* ───────── 기타 ───────── */
+let toastT;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800); }
+let armed = false, armT;
+$('reset').addEventListener('click', () => {
+  if(!armed){ armed = true; $('reset').textContent = '진행 기록을 지운다'; armT = setTimeout(() => { armed = false; $('reset').textContent = '처음부터'; }, 3000); return; }
+  clearTimeout(armT); armed = false; $('reset').textContent = '처음부터';
+  save = {v:1, n:0, flag:null}; persist(); curCh = 1; renderTop(); renderMap(); toast('진행 기록을 지웠다');
+});
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ if(run){ quit(); renderTop(); renderMap(); } else closeSheet(); } });
+
+renderTop(); renderMap();
+</script>
+</body>
+</html>
