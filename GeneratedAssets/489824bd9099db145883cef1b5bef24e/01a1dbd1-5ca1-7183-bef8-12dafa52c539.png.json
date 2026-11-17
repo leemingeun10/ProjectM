@@ -1,0 +1,31 @@
+{
+    "asset": "489824bd9099db145883cef1b5bef24e",
+    "fileName": "01a1dbd1-5ca1-7183-bef8-12dafa52c539.png",
+    "prompt": "Full-body front view, exact symmetrical T-pose, arms straight out horizontally, legs straight, feet shoulder-width apart, hands in loose fists, palms down. Plain light gray background, entire body visible, no props, no weapon, no text. Stylized semi-realistic game character, matte cloth, shadowless even front lighting. Character: a lean wiry man in his late 40s, weathered tanned face, short graying stubble, calm sharp eyes. Gray-streaked messy hair tied up with a rag. Faded indigo ragged short jacket with rust-brown patches, torn trousers rolled to the calf, a frayed rope belt with several knots hanging from it. Straw sandals. Not resembling a young boy or a topknot swordsman.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}

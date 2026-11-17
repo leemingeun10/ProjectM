@@ -1,0 +1,31 @@
+{
+    "asset": "db3131742daa70b4f84766eeef197898",
+    "fileName": "01a1db9a-482f-7cbf-9337-e52c191ecb8c.png",
+    "prompt": "Full-body front view, exact symmetrical T-pose, arms horizontal, legs straight, feet shoulder-width apart, hands in loose fists, palms down. Plain light gray background, entire body visible, no props, no weapon, no text. Stylized semi-realistic game character, matte cloth, shadowless even front lighting. Character: a thin 16-year-old boy, slender youthful build with narrow shoulders, smooth beardless face, eyes clearly open. Worn gray-brown clothes with visible sewn patches on the sleeves and trouser knees: a short close-fitting jacket ending at the hips and close-fitting trousers, nothing hanging. Messy short ponytail at the back of the head, not a topknot. A bright saturated jade-green headband tied flat across the forehead, no hanging ends. Barefoot.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}

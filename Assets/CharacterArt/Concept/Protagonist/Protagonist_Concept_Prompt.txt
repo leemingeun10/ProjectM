@@ -1,0 +1,65 @@
+Protagonist concept, stage 1 (2026-11-15)
+=========================================
+
+Purpose: front T-pose concept for the protagonist (reference for later 3D generation, same pipeline as Ronin V2).
+Style sentences reused (shortened) from Ronin_Concept_Prompt.txt: pose, plain light gray background, lighting.
+Kept short so the character sentences are not ignored. Must not look like Ronin A2 (face or build).
+
+Calls 1 and 2 (same prompt, two separate calls)
+-----------------------------------------------
+Command:          GenerateImage
+Model:            gemini-3.0-pro
+Size:             1024 x 1024
+Reference image:  none (text only)
+Negative prompt:  none (the tool has no negative-prompt parameter)
+Seed:             random (tool default; not settable)
+Save paths:       Assets/CharacterArt/Concept/Protagonist/Protagonist_Concept_A1.png (call 1)
+                  Assets/CharacterArt/Concept/Protagonist/Protagonist_Concept_A2.png (call 2)
+
+Prompt:
+Full-body front view, exact symmetrical T-pose, arms horizontal, legs straight, feet shoulder-width apart, hands in loose fists, palms down. Plain light gray background, entire body visible, no props, no weapon, no text. Stylized semi-realistic game character, matte cloth, shadowless even front lighting. Character: a thin 16-year-old boy, slender youthful build with narrow shoulders, smooth beardless face, eyes clearly open. Worn gray-brown clothes with visible sewn patches on the sleeves and trouser knees: a short close-fitting jacket ending at the hips and close-fitting trousers, nothing hanging. Messy short ponytail at the back of the head, not a topknot. A bright saturated jade-green headband tied flat across the forehead, no hanging ends. Barefoot.
+
+Results (2026-11-15)
+--------------------
+Call 1 -> Protagonist_Concept_A1.png (guid 7a2ecc3c8ab8912489d8a4a187b2df24)
+          Record: GeneratedAssets/7a2ecc3c8ab8912489d8a4a187b2df24/01a1db99-adef-7125-b676-65fa7d04d549.png(.json)
+Call 2 -> Protagonist_Concept_A2.png (guid db3131742daa70b4f84766eeef197898)
+          Record: GeneratedAssets/db3131742daa70b4f84766eeef197898/01a1db9a-482f-7cbf-9337-e52c191ecb8c.png(.json)
+Both records: model gemini-3.0-pro, 1024x1024, customSeed -1, refinementMode Generation. One file per call, no duplicates.
+
+A1: T-pose (arms near horizontal, fists). Body and face turned slightly to the viewer's right (not exactly front).
+    Black messy hair gathered high at the back. Wrap-collar jacket ending at the hips, sewn patches on sleeves,
+    jacket and one knee. Barefoot. Headband jade (hue 153, sat 0.45: softer than asked) with two ends hanging
+    behind the neck (asked: no hanging ends). Faint floor shadow.
+A2: A-pose, arms about 45 degrees down (asked: T-pose). Straight front view. Brown messy ponytail high at the back.
+    Collarless close-fitting jacket ending at the hips, patches on elbow, chest and both knees. Barefoot.
+    Headband brighter jade (hue 159, sat 0.67), also with two ends hanging behind the neck.
+Both: young smooth faces, slim build, clearly unlike Ronin A2. Both are more cartoon-stylized (smoother skin,
+    larger eyes) than Ronin A2's semi-realistic look. No text in either image. No edits made.
+
+Front edit (2026-11-15): A1 chosen
+----------------------------------
+Before:   copied Protagonist_Concept_A1.png -> Protagonist_Concept_A1_Front.png (edit target; the edit overwrites
+          its target in place). A1 itself is unchanged (sha1 291207ac... before and after).
+Command:  EditImageWithPrompt
+Model:    gemini-3.0-pro
+Target:   Assets/CharacterArt/Concept/Protagonist/Protagonist_Concept_A1_Front.png (guid cd34d0002ba91024f8186269f56cf44d)
+Reference: the target image itself (tool default; no strength parameter)
+Record:   GeneratedAssets/cd34d0002ba91024f8186269f56cf44d/01a1dbbf-157c-70f1-8285-20889e04b5c2.png(.json)
+          (Protagonist_Concept_A1_Front.png(.json) in the same folder is the tool's snapshot of the pre-edit image)
+Paid calls: 1 (no retry).
+
+Prompt:
+Turn the character to face exactly front, body and face symmetrical toward the viewer, arms still in the same horizontal T-pose. Keep the clothes, patches, hair, headband, colors and background unchanged.
+
+Result (1024 x 1024):
+- Body and face now face the viewer straight on, symmetrical. Same face and identity; the eyes now look at the viewer.
+- Arms: still horizontal T-pose with fists; arm span / height 0.753 -> 0.804 (arms a little longer in the image,
+  no longer foreshortened by the turn).
+- Hair: black, messy, spiky on top; the gathered tail at the back no longer shows from the front.
+- Clothes: same wrap-collar jacket ending at the hips and the same trousers, same gray-brown. Patches still on both
+  sleeves, the jacket side and one knee (the trouser hems look a little more frayed).
+- Headband: same jade (hue 156, sat 0.42, still softer than asked). One end now shows behind the neck on the
+  viewer's right (A1 had two); still a hanging end.
+- Feet: barefoot, a little turned out; faint floor shadow still there.
+- Background: unchanged light gray.

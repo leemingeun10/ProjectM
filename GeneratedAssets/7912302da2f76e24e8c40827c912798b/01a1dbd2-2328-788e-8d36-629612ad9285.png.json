@@ -1,0 +1,41 @@
+{
+    "asset": "7912302da2f76e24e8c40827c912798b",
+    "fileName": "01a1dbd2-2328-788e-8d36-629612ad9285.png",
+    "prompt": "The boy must match the reference image exactly: same face, messy black hair with a short ponytail tied at the back, jade-green headband, gray-brown patched jacket and trousers, barefoot. Scene: a cold dawn in a narrow alley of an old Chinese market town, wooden shop fronts and packed-earth walls, blue-gray mist, faint warm light from a distant window. The thin teenage boy sits crouched against a wall hugging his knees, small in the frame, looking at the ground. Wide shot, no text. Same stylized semi-realistic game rendering style as the reference.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "cd34d0002ba91024f8186269f56cf44d",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 576
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}

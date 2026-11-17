@@ -1,0 +1,84 @@
+Chapter 1 story cuts (2026-11-15)
+=================================
+
+Cut 1-1a, call 1
+----------------
+Command:          GenerateImage
+Model:            gemini-3.0-pro
+Size:             1024 x 576 (16:9; test size before deciding on 2048 x 1152)
+Reference images: 1 = Assets/CharacterArt/Concept/Protagonist/Protagonist_Concept_A1_Front.png
+Negative prompt:  none (the tool has no negative-prompt parameter)
+Seed:             random (tool default; not settable)
+Save path:        Assets/StoryArt/Chapter1/Cut_1-1a_A1.png
+
+Prompt:
+The boy must match the reference image exactly: same face, messy black hair with a short ponytail tied at the back, jade-green headband, gray-brown patched jacket and trousers, barefoot. Scene: a cold dawn in a narrow alley of an old Chinese market town, wooden shop fronts and packed-earth walls, blue-gray mist, faint warm light from a distant window. The thin teenage boy sits crouched against a wall hugging his knees, small in the frame, looking at the ground. Wide shot, no text. Same stylized semi-realistic game rendering style as the reference.
+
+Result of cut 1-1a, call 1 (2026-11-15)
+---------------------------------------
+File:    Assets/StoryArt/Chapter1/Cut_1-1a_A1.png (guid 7912302da2f76e24e8c40827c912798b)
+Record:  GeneratedAssets/7912302da2f76e24e8c40827c912798b/01a1dbd2-2328-788e-8d36-629612ad9285.png(.json)
+         Record lists dimensions 1024 x 576 and the reference (guid cd34d000..., strength 0.25), but the returned
+         image is 1024 x 1024 (square, not 16:9). Not retried.
+Boy:     same face and cartoon-3D style as the reference; black messy hair gathered in a short tuft tied high at
+         the back; jade-green headband with one end hanging behind (as in the reference); gray-brown jacket and
+         trousers with stitched patches; barefoot.
+Scene:   misty blue-gray dawn alley, packed-earth wall on the left, wooden shop fronts on the right, one warm
+         window upper right. The boy sits against the wall hugging his knees, looking down, on the left third.
+         He fills about half the frame height: medium-wide, not "small in the frame". No text.
+         (No jade cloth in his hand: not in this prompt.)
+
+Cut 1-1a, style B (ink wash + jade accent), call 1 (2026-11-15)
+---------------------------------------------------------------
+Command:          GenerateImage
+Model:            gemini-3.0-pro
+Size:             1024 x 1024 requested
+Reference images: 1 = Assets/CharacterArt/Concept/Protagonist/Protagonist_Concept_A1_Front.png
+Save path:        Assets/StoryArt/Chapter1/Cut_1-1a_B1.png (Cut_1-1a_A1.png untouched, sha1 6e1f7b5c... before and after)
+Paid calls:       1 (no retry)
+
+Prompt as sent (the user's prompt plus the last sentence, added for the rule "keep the boy in the middle band,
+top and bottom 20% empty"):
+Use the reference only for who the boy is: thin teenage boy, messy black hair with a short ponytail low at the back, jade-green headband, gray-brown patched jacket and trousers, barefoot. Do not copy its 3D rendering. Draw a simple casual 2D illustration, not 3D, not photoreal: loose ink-wash and watercolor storybook style with visible brush strokes and simple shapes, flat muted colors. Palette: pale gray, faded ochre and blue-gray only, with the jade-green headband as the only saturated color. Scene: cold dawn in a narrow alley of an old Chinese market town, simple wooden shop fronts and an earthen wall drawn with loose brush lines, soft misty washes. The boy sits crouched against the wall hugging his knees, looking at the ground, small in the lower left with lots of quiet empty space. Simple face with few lines. No text. Keep the whole boy inside the middle horizontal band of the image, leaving the top 20% and bottom 20% free of him.
+
+Result:
+File:    Assets/StoryArt/Chapter1/Cut_1-1a_B1.png (guid 31e7baf8b996dd249ae9f7cbb36dc393), 1024 x 1024
+Record:  GeneratedAssets/31e7baf8b996dd249ae9f7cbb36dc393/01a1dbdd-e753-751b-ae82-071f82e024c1.png(.json)
+Layout:  the model drew a wide letterboxed panel with a thin ink border (y 270-742, about 2.17:1) on blank
+         off-white paper above and below, instead of a full-bleed scene.
+Crop:    Cut_1-1a_B1_169.png, 1024 x 576, rows 218-794 (centred on the panel), made locally (free). The whole boy
+         stays in (about rows 247-500 of the crop); 52 px strips of blank paper and the border lines remain at the
+         top and bottom.
+Boy:     jade-green headband (the only saturated colour, one short end at the back), short ponytail tied at the
+         back of the head and clearly visible, gray patched jacket and trousers with frayed hems, barefoot,
+         simple face with few lines, looking down, hugging his knees against the wall, left third.
+Style:   2D ink line + watercolour washes, visible brush texture, muted pale gray / ochre / blue-gray; no 3D
+         shading or render texture left. Clothes read gray rather than gray-brown. No text.
+
+Cut 1-2a, style B (soup shop back door, boy running away), call 1 (2026-11-15)
+-------------------------------------------------------------------------------
+Command:          GenerateImage
+Model:            gemini-3.0-pro
+Size:             1024 x 1024 requested
+Reference images: 1 = Assets/CharacterArt/Concept/Protagonist/Protagonist_Concept_A1_Front.png
+Save path:        Assets/StoryArt/Chapter1/Cut_1-2a_B1.png
+Paid calls:       1 (no retry). Prompt sent exactly as given (no layout sentence added).
+
+Prompt:
+Use the reference only for who the boy is: thin teenage boy, messy black hair with a short ponytail low at the back, jade-green headband, gray-brown patched jacket and trousers, barefoot. Do not copy its 3D rendering. Draw a simple casual 2D illustration, not 3D, not photoreal: loose ink-wash and watercolor storybook style with visible brush strokes and simple shapes, flat muted colors. Palette: pale gray, faded ochre and blue-gray only, with the jade-green headband as the only saturated color. Scene: the back door of a soup shop in an old Chinese market town at early morning, steam pouring from the doorway drawn as soft washes, wet packed-earth ground. The thin teenage boy sprints away from the door clutching a steamed bun, glancing back over his shoulder in fear. Behind him at the doorway, only the back and raised arm of the shop owner swinging a straw broom is visible, face hidden. Simple faces with few lines. Wide dynamic composition. The illustration fills the entire canvas edge to edge: no border, no frame, no paper margin, no text.
+
+Result:
+File:    Assets/StoryArt/Chapter1/Cut_1-2a_B1.png (guid d0305bf125eaf004394ba9fe90bc7a68), 1024 x 1024
+Record:  GeneratedAssets/d0305bf125eaf004394ba9fe90bc7a68/01a1dbe6-1fb0-7b13-a5dc-ee0685c41413.png(.json)
+Layout:  full bleed, no border, frame or paper margin. No text.
+Boy:     jade-green headband with one end flying behind; gray patched jacket and trousers, frayed hems, rope-like
+         sash; barefoot; holds a steamed bun with both hands, looks back over his shoulder in fear (sweat marks).
+         No ponytail visible: the hair is short and spiky all round.
+Owner:   left, inside the doorway, seen from behind with a hair bun, right arm raised with a straw broom; face hidden.
+         He faces into the shop (away from the boy), so the swing reads as aimed into the room, not at the boy.
+Scene:   open wooden back door, steam drawn as washes drifting out of the doorway toward the boy, washed earth
+         ground, a tiled roof on the right. The boy runs toward the lower right in the right half; the boy's figure
+         spans rows ~255-965, taller than a 576-row band.
+Crop:    Cut_1-2a_B1_169.png, 1024 x 576, rows 205-781 (local, free). Keeps the boy's head, headband, face, bun and
+         upper legs, the owner with raised arm and most of the broom, the door and steam. The boy's front foot and
+         lower shins and the broom tip are cut: the whole boy cannot fit a 576-row band at full width.

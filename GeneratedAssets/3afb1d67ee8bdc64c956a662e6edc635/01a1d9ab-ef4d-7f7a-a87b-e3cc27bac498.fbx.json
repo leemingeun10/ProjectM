@@ -1,0 +1,23 @@
+{
+    "asset": "3afb1d67ee8bdc64c956a662e6edc635",
+    "fileName": "01a1d9ab-ef4d-7f7a-a87b-e3cc27bac498.fbx",
+    "prompt": "matte cloth, no specular highlights, flat even albedo colors",
+    "negativePrompt": "",
+    "model": "model3d-tripo3-1",
+    "modelName": "Tripo 3.1",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "promptImageReferenceGuid": "3608e6a28a543ac4c98eb3ce73f3218f",
+    "modelReferenceGuid": "",
+    "multiviewFrontGuid": "",
+    "multiviewBackGuid": "",
+    "multiviewLeftGuid": "",
+    "multiviewRightGuid": "",
+    "multiviewTopGuid": "",
+    "multiviewBottomGuid": "",
+    "multiviewLeftFrontGuid": "",
+    "multiviewRightFrontGuid": "",
+    "faceLimit": -1
+}

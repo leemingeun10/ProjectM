@@ -1,0 +1,31 @@
+{
+    "asset": "0531c19d0a02cd24689c68cceccc37a4",
+    "fileName": "01a1d926-e86a-7a8b-adbd-0a2729ab1696.png",
+    "prompt": "Full-body front view of a single character, standing straight in a relaxed A-pose with both arms held slightly away from the body, legs straight, feet shoulder-width apart. Both hands closed into loose fists with palms facing down, hands proportional and not oversized, empty hands, no sword, no weapon, no props. Realistic adult human proportions: arms long enough that the fists reach mid-thigh, shoulders of normal width, not broad or bulky. Hair neatly tied in a compact topknot, solid hair mass, no loose strands. Close-fitting clothing: a short wrap-style jacket whose hem ends at the hip bone, trousers fully visible from the hips down, nothing hanging (no ropes, sash tails, ribbons, capes, long robes or long sleeves). Flat, shadowless, even front lighting, albedo-like colors, matte cloth, no specular highlights, no rim light, no smoke, no dust, no wind. Plain light gray background, entire body visible from head to feet. Stylized semi-realistic game character. Character: a dignified, disciplined young swordsman of a mountain plum-blossom sword sect, a calm and refined face with eyes clearly open. Short wrap jacket in bright ivory white with visible fabric folds. Trousers in deep navy blue, clearly much darker than the jacket. A narrow flat ivory sash around the waist, ends tucked in, no knot, no tails. A thin plain dark headband around the topknot with no hanging ends. One accent color only: a small pale plum-blossom pink flower embroidered on the left side of the chest, and no pink anywhere else.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}

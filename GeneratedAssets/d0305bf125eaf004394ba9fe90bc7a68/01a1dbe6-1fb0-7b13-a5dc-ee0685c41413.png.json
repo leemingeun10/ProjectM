@@ -1,0 +1,41 @@
+{
+    "asset": "d0305bf125eaf004394ba9fe90bc7a68",
+    "fileName": "01a1dbe6-1fb0-7b13-a5dc-ee0685c41413.png",
+    "prompt": "Use the reference only for who the boy is: thin teenage boy, messy black hair with a short ponytail low at the back, jade-green headband, gray-brown patched jacket and trousers, barefoot. Do not copy its 3D rendering. Draw a simple casual 2D illustration, not 3D, not photoreal: loose ink-wash and watercolor storybook style with visible brush strokes and simple shapes, flat muted colors. Palette: pale gray, faded ochre and blue-gray only, with the jade-green headband as the only saturated color. Scene: the back door of a soup shop in an old Chinese market town at early morning, steam pouring from the doorway drawn as soft washes, wet packed-earth ground. The thin teenage boy sprints away from the door clutching a steamed bun, glancing back over his shoulder in fear. Behind him at the doorway, only the back and raised arm of the shop owner swinging a straw broom is visible, face hidden. Simple faces with few lines. Wide dynamic composition. The illustration fills the entire canvas edge to edge: no border, no frame, no paper margin, no text.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "cd34d0002ba91024f8186269f56cf44d",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}

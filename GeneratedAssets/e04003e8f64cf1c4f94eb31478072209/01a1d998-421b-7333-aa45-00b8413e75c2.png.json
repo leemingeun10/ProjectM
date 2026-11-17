@@ -1,0 +1,41 @@
+{
+    "asset": "e04003e8f64cf1c4f94eb31478072209",
+    "fileName": "01a1d998-421b-7333-aa45-00b8413e75c2.png",
+    "prompt": "Recolor the clothing only: the jacket and the waist sash become ivory off-white cloth, and the trousers become deep navy blue. Keep the face, hair, pose, outstretched arms, fists, body proportions, fabric texture, lighting and background exactly the same.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "e04003e8f64cf1c4f94eb31478072209",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0,
+    "dynamicParams": {
+        "serializedData": []
+    }
+}

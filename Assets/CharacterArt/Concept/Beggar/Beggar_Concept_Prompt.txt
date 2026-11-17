@@ -1,0 +1,33 @@
+Beggar (가명1, former Beggars' Sect) concept, stage 2 (2026-11-15)
+===============================================================
+
+Purpose: front T-pose concept for 가명1 (story character; same pose/background/lighting sentences as the protagonist).
+Must not resemble the protagonist (Protagonist_Concept_A1_Front) or the Ronin (Ronin_Concept_A2).
+
+Call 1
+------
+Command:          GenerateImage
+Model:            gemini-3.0-pro
+Size:             1024 x 1024
+Reference image:  none (text only)
+Negative prompt:  none (the tool has no negative-prompt parameter)
+Seed:             random (tool default; not settable)
+Save path:        Assets/CharacterArt/Concept/Beggar/Beggar_Concept_A1.png
+
+Prompt:
+Full-body front view, exact symmetrical T-pose, arms straight out horizontally, legs straight, feet shoulder-width apart, hands in loose fists, palms down. Plain light gray background, entire body visible, no props, no weapon, no text. Stylized semi-realistic game character, matte cloth, shadowless even front lighting. Character: a lean wiry man in his late 40s, weathered tanned face, short graying stubble, calm sharp eyes. Gray-streaked messy hair tied up with a rag. Faded indigo ragged short jacket with rust-brown patches, torn trousers rolled to the calf, a frayed rope belt with several knots hanging from it. Straw sandals. Not resembling a young boy or a topknot swordsman.
+
+Result of call 1 (2026-11-15)
+-----------------------------
+File:    Assets/CharacterArt/Concept/Beggar/Beggar_Concept_A1.png (guid 489824bd9099db145883cef1b5bef24e), 1024 x 1024
+Record:  GeneratedAssets/489824bd9099db145883cef1b5bef24e/01a1dbd1-5ca1-7183-bef8-12dafa52c539.png(.json)
+Pose:    T-pose kept (arms horizontal, fists, front, symmetrical). Arm span / height 0.846
+         (Protagonist A1_Front 0.804). Faint floor shadow.
+Kept:    lean wiry middle-aged man, weathered tanned face, calm sharp eyes, faded indigo ragged short jacket with
+         torn hem and sleeves cut above the elbow, frayed rope belt with a knot and two hanging ends, trousers
+         torn and rolled to the calf (one leg rolled, the other frayed), straw sandals. More realistic rendering,
+         close to Ronin A2.
+Off:     patches are gray/blue-gray, not rust-brown; the hair is spiky gray held by a rag headband across the
+         forehead, not tied up; the stubble reads as a short gray beard and moustache; trousers dark charcoal.
+vs others: clearly unlike the protagonist (age, build, style). Same age group and face type as the Ronin
+         (weathered middle-aged man); told apart by gray hair, rag headband, beard, indigo jacket and rope belt.
