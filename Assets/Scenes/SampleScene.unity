@@ -9209,15 +9209,15 @@ MonoBehaviour:
   - look: 1
     prefab: {fileID: 8690366471562343090, guid: 654c50f71258ea544b9d537cbe5bff41, type: 3}
     heightOffset: 0.029
-    controller: {fileID: 0}
+    controller: {fileID: 22100000, guid: 9a8809accd3759c4d945f50abf17edc4, type: 2}
   - look: 2
     prefab: {fileID: 655802920708700374, guid: a667fe91344905946a0d81fcb5721f52, type: 3}
     heightOffset: 0.024
-    controller: {fileID: 0}
+    controller: {fileID: 22100000, guid: 1a87a18c203edb049acc955d5f45bc01, type: 2}
   - look: 3
     prefab: {fileID: 4364788607745936191, guid: 9d336fc58dca5754b975f1df16c792df, type: 3}
     heightOffset: 0.023
-    controller: {fileID: 0}
+    controller: {fileID: 22100000, guid: 2cdbab1057a92d541b2edc096618c888, type: 2}
 --- !u!1 &607528701
 GameObject:
   m_ObjectHideFlags: 0
