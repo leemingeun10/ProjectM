@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Game.Client.Battle;
 using Game.Client.Scenery;
+using Game.Sim.Ai;
+using Game.Sim.Battle;
 using Game.Sim.Progress;
 using UnityEngine;
 
@@ -41,7 +43,8 @@ namespace Game.Client.Story
     // (names, lines, narration, choice wording) lives in that file, never in code, so it can be
     // rewritten without touching scripts. Field names match the JSON keys (JsonUtility).
     // Mirrors CHAPTERS / ST in Docs/StoryMapPrototype.html, plus the game-side fields
-    // aiStage / look / theme / image / starter / outcomeLabel.
+    // aiStage / recommendedPowerPermille / enemyPowerPermille / look / theme / image / starter /
+    // outcomeLabel.
     [Serializable]
     public class StoryBook
     {
@@ -215,7 +218,8 @@ namespace Game.Client.Story
 
                 if (kind == StoryStageKind.Story)
                 {
-                    if (!string.IsNullOrEmpty(s.enemy) || s.aiStage != 0 || !string.IsNullOrEmpty(s.look)
+                    if (!string.IsNullOrEmpty(s.enemy) || s.aiStage != 0 || s.recommendedPowerPermille != 0
+                        || s.enemyPowerPermille != 0 || !string.IsNullOrEmpty(s.look)
                         || !string.IsNullOrEmpty(s.theme) || s.starter || !string.IsNullOrEmpty(s.outcomeLabel))
                         throw new StoryDataException($"{at}: a story stage has no battle fields.");
                 }
@@ -225,6 +229,19 @@ namespace Game.Client.Story
                         throw new StoryDataException($"{at}: enemy is required.");
                     if (!StageCatalog.IsValidStageIndex(s.aiStage))
                         throw new StoryDataException($"{at}: aiStage {s.aiStage} is not a stage in StageCatalog (1..{StageCatalog.StageCount}).");
+                    if (StageCatalog.Get(s.aiStage).Difficulty == AiDifficulty.Hard)
+                        throw new StoryDataException($"{at}: aiStage {s.aiStage} is a Hard AI; story opponents use Easy and Normal techniques only.");
+                    if (s.recommendedPowerPermille < 0 || s.enemyPowerPermille < 0)
+                        throw new StoryDataException($"{at}: combat power must not be negative.");
+                    // A fight that has to be won tells the player the power it expects; a forced
+                    // loss names the enemy's power outright instead.
+                    if (kind == StoryStageKind.Loss)
+                    {
+                        if (s.enemyPowerPermille == 0 || s.recommendedPowerPermille != 0)
+                            throw new StoryDataException($"{at}: a loss stage needs enemyPowerPermille and no recommendedPowerPermille.");
+                    }
+                    else if (s.recommendedPowerPermille == 0 || s.enemyPowerPermille != 0)
+                        throw new StoryDataException($"{at}: a {s.kind} stage needs recommendedPowerPermille and no enemyPowerPermille.");
                     if (!TryParseLook(s.look, out _))
                         throw new StoryDataException($"{at}: unknown look \"{s.look}\".");
                     if (!TryParseTheme(s.theme, out _))
@@ -321,7 +338,14 @@ namespace Game.Client.Story
         public string clear;
         public string enemy;
         // StageCatalog index whose seeded AI technique the opponent uses (battle kinds only).
+        // Easy and Normal entries only: the story never fields a Hard AI technique.
         public int aiStage;
+        // Combat power in permille (1000 = 1.0) the battle is tuned for, shown to the player; the
+        // enemy's stats follow from it like a 수련 stage's (CombatPowerRules.EnemyStats). Battle
+        // and boss stages only.
+        public int recommendedPowerPermille;
+        // The enemy's own combat power in permille, given outright. Loss stages only (1-5).
+        public int enemyPowerPermille;
         // EnemyLook / ArenaTheme member names (battle kinds only).
         public string look;
         public string theme;
@@ -342,6 +366,10 @@ namespace Game.Client.Story
         public StoryStageKind Kind => StoryBook.TryParseKind(kind, out StoryStageKind k) ? k : throw new StoryDataException($"Stage {id}: unknown kind.");
         public StoryClearRule Clear => StoryBook.TryParseClear(clear, out StoryClearRule r) ? r : throw new StoryDataException($"Stage {id}: unknown clear rule.");
         public bool HasBattle => Kind != StoryStageKind.Story;
+        // 내공 / 외공 the stage's enemy fights with (battle kinds only).
+        public CombatStats EnemyStats => enemyPowerPermille > 0
+            ? CombatPowerRules.StatsForPower(enemyPowerPermille)
+            : CombatPowerRules.EnemyStats(recommendedPowerPermille);
         public EnemyLook Look => StoryBook.TryParseLook(look, out EnemyLook l) ? l : throw new StoryDataException($"Stage {id}: no look.");
         public ArenaTheme Theme => StoryBook.TryParseTheme(theme, out ArenaTheme t) ? t : throw new StoryDataException($"Stage {id}: no theme.");
     }

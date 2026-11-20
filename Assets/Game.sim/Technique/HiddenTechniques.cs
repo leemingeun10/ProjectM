@@ -93,6 +93,12 @@ namespace Game.Sim.Technique
             return total;
         }
 
+        // Percent of its base damage a turn deals: DamagePercentBase for an ordinary turn, the
+        // technique's DamagePercent for a hidden one. BattleSimulator folds this into the one
+        // damage formula (CombatPowerRules.Damage).
+        public static int DamagePercentOf(TechniqueStep attacker)
+            => attacker.IsHidden && TryGetActive(attacker.HiddenTechniqueId, out HiddenTechniqueDefinition d) ? d.DamagePercent : DamagePercentBase;
+
         // Damage a turn deals after its hidden-technique bonus: baseDamage * DamagePercent / 100,
         // rounded half up (10 * 105% = 10.5 -> 11, 9 * 105% = 9.45 -> 9). Ordinary turns and
         // zero damage are unchanged, so the bonus only applies when damage actually lands.

@@ -77,8 +77,10 @@ namespace Game.Tests
         [Test]
         public void AllPoints_StayInsideDrawingArea()
         {
-            long maxX = AiTechniqueGenerator.HalfWidth * Fixed.Scale;
-            long maxY = AiTechniqueGenerator.HalfHeight * Fixed.Scale;
+            // The AI's drawing area is the player's frame, converted to canvas units.
+            Assert.AreEqual(StrokeUnits.CmToCanvasRaw(StrokeUnits.FrameWidthCmRaw / 2), AiTechniqueGenerator.FrameHalfRaw);
+            long maxX = AiTechniqueGenerator.FrameHalfRaw;
+            long maxY = AiTechniqueGenerator.FrameHalfRaw;
             foreach (AiDifficulty difficulty in AllDifficulties)
             {
                 for (ulong seed = 0; seed < SeedCount; seed++)
@@ -93,6 +95,88 @@ namespace Game.Tests
                     }
                 }
             }
+        }
+
+        // Path length the way StrokeAnalyzer measures it (a Thrust stores no length).
+        private static long PathLengthRaw(IReadOnlyList<StrokePoint> points)
+        {
+            Fixed length = Fixed.Zero;
+            for (int i = 0; i < points.Count - 1; i++)
+            {
+                Fixed dx = points[i + 1].X - points[i].X;
+                Fixed dy = points[i + 1].Y - points[i].Y;
+                length += Fixed.Sqrt(dx * dx + dy * dy);
+            }
+            return length.Raw;
+        }
+
+        [TestCase(AiDifficulty.Easy, 30, 50)]
+        [TestCase(AiDifficulty.Normal, 50, 75)]
+        [TestCase(AiDifficulty.Hard, 75, 100)]
+        public void StrokeLengths_AreTheDifficultysShareOfTheLengthLimit(AiDifficulty difficulty, int minPercent, int maxPercent)
+        {
+            AiProfile profile = AiProfile.For(difficulty);
+            Assert.AreEqual(minPercent, profile.LengthMinPercent);
+            Assert.AreEqual(maxPercent, profile.LengthMaxPercent);
+
+            long limit = StrokeUnits.MaxStrokeLengthCanvasRaw;
+            long min = limit * minPercent / 100;
+            long max = limit * maxPercent / 100;
+            long shortest = long.MaxValue, longest = long.MinValue;
+            for (ulong seed = 0; seed < 300; seed++)
+            {
+                foreach (TechniqueStep step in AiTechniqueGenerator.Generate(difficulty, seed))
+                {
+                    long length = PathLengthRaw(step.RawPoints);
+                    if (step.Stroke.Type == StrokeType.Slash)
+                        Assert.AreEqual(step.Stroke.Length.Raw, length);
+                    Assert.GreaterOrEqual(length, min, $"{difficulty} seed {seed} turn {step.TurnIndex} ({step.Stroke.Type})");
+                    Assert.LessOrEqual(length, max, $"{difficulty} seed {seed} turn {step.TurnIndex} ({step.Stroke.Type})");
+                    shortest = System.Math.Min(shortest, length);
+                    longest = System.Math.Max(longest, length);
+                }
+            }
+            // The whole share is used, not just one end of it.
+            Assert.Less(shortest, min + (max - min) / 10);
+            Assert.Greater(longest, max - (max - min) / 10);
+        }
+
+        [Test]
+        public void FallbackSpiral_IsASlashThatFitsTheFrameAtAnyLengthAndHeading()
+        {
+            long frame = 2 * AiTechniqueGenerator.FrameHalfRaw;
+            long[] lengths = { StrokeUnits.MaxStrokeLengthCanvasRaw * 30 / 100, StrokeUnits.MaxStrokeLengthCanvasRaw * 65 / 100, StrokeUnits.MaxStrokeLengthCanvasRaw };
+            foreach (long length in lengths)
+            {
+                foreach (int sign in new[] { 1, -1 })
+                {
+                    for (int heading = 0; heading < 360; heading++)
+                    {
+                        StrokePoint[] curve = AiTechniqueGenerator.BuildCurve(length, heading,
+                            sign * AiTechniqueGenerator.FallbackFirstTurnTenths, sign * AiTechniqueGenerator.FallbackLastTurnTenths);
+                        string at = $"length {length} sign {sign} heading {heading}";
+                        Assert.AreEqual(StrokeType.Slash, StrokeAnalyzer.Analyze(curve).Type, at);
+                        long minX = long.MaxValue, maxX = long.MinValue, minY = long.MaxValue, maxY = long.MinValue;
+                        foreach (StrokePoint p in curve)
+                        {
+                            minX = System.Math.Min(minX, p.X.Raw);
+                            maxX = System.Math.Max(maxX, p.X.Raw);
+                            minY = System.Math.Min(minY, p.Y.Raw);
+                            maxY = System.Math.Max(maxY, p.Y.Raw);
+                        }
+                        Assert.LessOrEqual(maxX - minX, frame, at);
+                        Assert.LessOrEqual(maxY - minY, frame, at);
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void ProfileOutsideTheLengthLimit_IsRejected()
+        {
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => AiTechniqueGenerator.Generate(new AiProfile(20, 50, 101, 0), 1));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => AiTechniqueGenerator.Generate(new AiProfile(20, 0, 50, 0), 1));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => AiTechniqueGenerator.Generate(new AiProfile(20, 60, 50, 0), 1));
         }
 
         [Test]
@@ -117,8 +201,8 @@ namespace Game.Tests
         [Test]
         public void ThrustPercentZero_ProducesNoThrusts_AndHundredOnlyThrustsOrCounters()
         {
-            var noThrust = new AiProfile(0, 200, 300, 60, 80, 2);
-            var allThrust = new AiProfile(100, 200, 300, 60, 80, 2);
+            var noThrust = new AiProfile(0, 30, 50, 2);
+            var allThrust = new AiProfile(100, 30, 50, 2);
             for (ulong seed = 0; seed < 20; seed++)
             {
                 foreach (TechniqueStep step in AiTechniqueGenerator.Generate(noThrust, seed))

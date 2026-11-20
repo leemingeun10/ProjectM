@@ -20,13 +20,13 @@ namespace Game.Tests
 
         [TestCase("1-1", 1, EnemyLook.Ronin, ArenaTheme.Street)]
         [TestCase("1-4", 2, EnemyLook.Ronin, ArenaTheme.Street)]
-        [TestCase("1-5", 15, EnemyLook.BlackSwordsman, ArenaTheme.Street)]
+        [TestCase("1-5", 10, EnemyLook.BlackSwordsman, ArenaTheme.Street)]
         [TestCase("2-3", 6, EnemyLook.BlackSwordsman, ArenaTheme.TrainingHall)]
         [TestCase("2-4", 8, EnemyLook.BlackSwordsman, ArenaTheme.TrainingHall)]
         [TestCase("2-5", 10, EnemyLook.BlackSwordsman, ArenaTheme.TrainingHall)]
-        [TestCase("3-1", 11, EnemyLook.PlumSwordsman, ArenaTheme.MountHua)]
-        [TestCase("3-4", 13, EnemyLook.PlumSwordsman, ArenaTheme.MountHua)]
-        [TestCase("3-5", 15, EnemyLook.PlumSwordsman, ArenaTheme.MountHua)]
+        [TestCase("3-1", 6, EnemyLook.PlumSwordsman, ArenaTheme.MountHua)]
+        [TestCase("3-4", 9, EnemyLook.PlumSwordsman, ArenaTheme.MountHua)]
+        [TestCase("3-5", 7, EnemyLook.PlumSwordsman, ArenaTheme.MountHua)]
         public void BattleStage_UsesTheApprovedOpponentModelAndSet(string id, int aiStage, EnemyLook look, ArenaTheme theme)
         {
             StoryStage stage = book.stages[book.IndexOf(id)];

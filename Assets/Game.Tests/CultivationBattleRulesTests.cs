@@ -1,35 +1,32 @@
+using Game.Client.Stroke;
 using Game.Sim.Cultivation;
+using Game.Sim.Stroke;
 using NUnit.Framework;
 
 namespace Game.Tests
 {
     public class CultivationBattleRulesTests
     {
-        // ---- MaxStrokeLength ----
+        // ---- stroke length limit: one value for every character, tied to the frame ----
 
-        [TestCase(0, 10)]
-        [TestCase(100, 12)]
-        [TestCase(49, 10)]
-        [TestCase(50, 11)]
-        [TestCase(99, 11)]
-        public void MaxStrokeLength_IsLinearBetweenZeroAndHundred(int externalPower, int expected)
+        [Test]
+        public void MaxStrokeLength_IsTwelveCentimetresForTheCurrentFrame()
         {
-            Assert.AreEqual(expected, CultivationBattleRules.MaxStrokeLength(externalPower));
-        }
-
-        [TestCase(-10, 10)]
-        [TestCase(150, 12)]
-        [TestCase(int.MaxValue, 12)]
-        public void MaxStrokeLength_IsClampedOutsideZeroToHundred(int externalPower, int expected)
-        {
-            Assert.AreEqual(expected, CultivationBattleRules.MaxStrokeLength(externalPower));
+            Assert.AreEqual(4500, StrokeUnits.FrameWidthCmRaw);
+            Assert.AreEqual(12000, CultivationBattleRules.MaxStrokeLengthCmRaw);
         }
 
         [Test]
-        public void MaxStrokeLength_NeverDecreasesAsPowerGrows()
+        public void MaxStrokeLength_IsFrameWidthTimesEightThirds()
         {
-            for (int power = 1; power <= 200; power++)
-                Assert.GreaterOrEqual(CultivationBattleRules.MaxStrokeLength(power), CultivationBattleRules.MaxStrokeLength(power - 1), $"power {power}");
+            Assert.AreEqual(StrokeUnits.FrameWidthCmRaw * 8 / 3, CultivationBattleRules.MaxStrokeLengthCmRaw);
+            Assert.AreEqual(StrokeUnits.MaxStrokeLengthCmRaw, CultivationBattleRules.MaxStrokeLengthCmRaw);
+        }
+
+        [Test]
+        public void MaxStrokeLength_IsWhatTheDrawingInputStopsAt()
+        {
+            Assert.AreEqual(CultivationBattleRules.MaxStrokeLengthCmRaw / (float)Fixed.Scale, StrokeInputController.MaxStrokeLengthCm, 1e-4f);
         }
     }
 }

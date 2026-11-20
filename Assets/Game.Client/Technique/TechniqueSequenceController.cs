@@ -17,8 +17,9 @@ namespace Game.Client.Technique
     // player presses the save-turn button, using the counter toggle state at that moment.
     // Saved turns are listed with a delete button each.
     //
-    // Cultivation: 외공 sets the stroke length cap; the trained 내공 is the builder's per-sequence
-    // budget for hidden techniques (TechniqueBuilder.InternalPower), never written back to the save.
+    // Cultivation: the trained 내공 is the builder's per-sequence budget for hidden techniques
+    // (TechniqueBuilder.InternalPower), never written back to the save. The stroke length cap is
+    // fixed (StrokeInputController.MaxStrokeLengthCm) and does not depend on 외공.
     //
     // Hidden techniques: when a pending stroke (counter off) is recognised as an active technique's
     // shape and the remaining 내공 can pay for it, the choice panel offers its moves. While it is
@@ -107,7 +108,6 @@ namespace Game.Client.Technique
 
         private void ApplyCultivation(CultivationStats stats)
         {
-            strokeInput.MaxStrokeLengthCm = CultivationBattleRules.MaxStrokeLength(stats.ExternalPower);
             builder.InternalPower = stats.InternalPower;
             UpdateUi();
         }
@@ -329,7 +329,7 @@ namespace Game.Client.Technique
             }
 
             string cut = strokeInput.LastStrokeHitLengthLimit ? " · 한도에서 끊김" : "";
-            Debug.Log($"[Hidden] 모양 점수: {scores} (기준 {ShapeRecognizer.DefaultThreshold}), 길이 {strokeInput.LastStrokeLengthCm:F1}/{strokeInput.MaxStrokeLengthCm}cm{cut}");
+            Debug.Log($"[Hidden] 모양 점수: {scores} (기준 {ShapeRecognizer.DefaultThreshold}), 길이 {strokeInput.LastStrokeLengthCm:F1}/{StrokeInputController.MaxStrokeLengthCm:0.##}cm{cut}");
             return (passed != null ? $"{passed} {passedScore}" : $"무공 모양 아님 (가장 가까움: {closest.Substring(0, 2)} {closestScore})") + cut;
         }
 
@@ -347,7 +347,7 @@ namespace Game.Client.Technique
                 : waitingForMove ? " · 동작을 고르세요" : "";
             // The status box only fits two lines, so the cultivation numbers ride on this bar.
             pendingText.text = !hasPending
-                ? (notice ?? "틀 안에 선을 그리세요") + $"  ·  한도 {strokeInput.MaxStrokeLengthCm}cm · 내공 {builder.RemainingInternalPower}"
+                ? (notice ?? "틀 안에 선을 그리세요") + $"  ·  한도 {StrokeInputController.MaxStrokeLengthCm:0.##}cm · 내공 {builder.RemainingInternalPower}"
                 : builder.IsFull ? $"{FormatStroke(pendingStroke)} · {pendingShapeSummary} (10턴 가득 참)"
                 : $"{(notice != null ? notice + " · " : "")}{FormatStroke(pendingStroke)} · {pendingShapeSummary}{chosen}";
 

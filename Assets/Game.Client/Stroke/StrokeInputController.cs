@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Game.Sim.Cultivation;
 using Game.Sim.Shape;
 using Game.Sim.Stroke;
 using UnityEngine;
@@ -18,11 +17,15 @@ namespace Game.Client.Stroke
     // measures the same on every device regardless of resolution or canvas scaling.
     // The finished stroke stays on screen until the next stroke starts or ClearDisplayedStroke().
     // A stroke stops growing once its drawn length reaches MaxStrokeLengthCm (the rest of the drag
-    // is ignored), so 외공 decides how much path one turn can hold.
+    // is ignored); the limit is the same for every character.
     public class StrokeInputController : MonoBehaviour
     {
-        public const float FrameWidthCm = 4.5f;
-        public const float FrameHeightCm = 4.5f;
+        // The frame is square; its size and the stroke length limit come from Game.sim's
+        // StrokeUnits (change StrokeUnits.FrameWidthCmRaw to resize the frame).
+        public const float FrameWidthCm = StrokeUnits.FrameWidthCmRaw / (float)Fixed.Scale;
+        public const float FrameHeightCm = FrameWidthCm;
+        // Path length cap for one stroke, in frame centimetres: frame width * 8 / 3.
+        public const float MaxStrokeLengthCm = StrokeUnits.MaxStrokeLengthCmRaw / (float)Fixed.Scale;
         private const float CmPerInch = 2.54f;
         // Below this Screen.dpi is treated as unknown (0 in some editors/emulators, or nonsense).
         private const float MinPlausibleDpi = 72f;
@@ -39,10 +42,6 @@ namespace Game.Client.Stroke
         // Raised after a completed drag has been analyzed, with the same fixed-point points
         // that were fed into the analyzer (for consumers that need the raw trajectory too).
         public event Action<StrokeResult, IReadOnlyList<StrokePoint>> StrokeCompleted;
-
-        // Path length cap for one stroke, in frame centimetres. Set from 외공 by whoever owns the
-        // player's stats (CultivationBattleRules.MaxStrokeLength).
-        public int MaxStrokeLengthCm { get; set; } = CultivationBattleRules.BaseStrokeLength;
 
         // Every drawn point of the last completed stroke (not resampled), in frame cm * 1000, for
         // shape recognition. Valid from StrokeCompleted until the next stroke completes.

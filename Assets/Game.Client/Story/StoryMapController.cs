@@ -1,7 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using Game.Client.Battle;
+using Game.Client.Cultivation;
 using Game.Client.Flow;
+using Game.Client.Stage;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -255,6 +258,9 @@ namespace Game.Client.Story
             };
             if (!string.IsNullOrEmpty(stage.enemy))
                 rows.Add(("상대", stage.enemy));
+            // Battles that must be won name the combat power they are tuned for, next to the player's.
+            if (stage.recommendedPowerPermille > 0)
+                rows.Add(("권장 전투력", $"{CombatPowerText.Format(stage.recommendedPowerPermille)} (내 전투력 {CombatPowerText.Format(BattleMatchups.PlayerStats(CultivationStore.Load()))})"));
             rows.Add(("사건", stage.@event));
             if (!string.IsNullOrEmpty(stage.system))
                 rows.Add(("시스템", stage.system));

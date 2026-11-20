@@ -11,7 +11,9 @@ namespace Game.Client.Story
     public static class StarterTechnique
     {
         public const AiDifficulty Difficulty = AiDifficulty.Easy;
-        public const ulong Seed = 0x5EED000BUL;
+        // Re-picked when the AI generator moved into the player's frame (0x5EED000B lost 64:80
+        // to the regenerated stage 1); this one wins 64:43.
+        public const ulong Seed = 0x5EED0000UL;
 
         public static List<TechniqueStep> Create() => AiTechniqueGenerator.Generate(Difficulty, Seed);
     }

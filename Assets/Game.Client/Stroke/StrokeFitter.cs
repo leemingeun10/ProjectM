@@ -7,7 +7,7 @@ namespace Game.Client.Stroke
     // Maps a recorded stroke into the unit square for small previews. Each stroke is fitted to
     // its own bounding box with a uniform scale (the longer side spans 0..1, the shorter one is
     // centred), so the shape is never distorted and the stroke always fills its preview, whatever
-    // space it was recorded in (player strokes are frame centimetres, AI strokes canvas units).
+    // its unit (a battle replay passes both sides in canvas units; a saved slot is centimetres).
     public static class StrokeFitter
     {
         public static List<Vector2> FitToUnitSquare(IReadOnlyList<StrokePoint> points)

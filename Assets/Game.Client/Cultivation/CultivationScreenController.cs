@@ -1,14 +1,16 @@
 using System.Collections;
+using Game.Client.Battle;
 using Game.Client.Flow;
 using Game.Client.Ui;
+using Game.Sim.Battle;
 using Game.Sim.Cultivation;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Game.Client.Cultivation
 {
-    // 단련 screen: shows 외공/내공 and their tiers, and lets the player train one of them once a
-    // day. The character sits in meditation on a 3D stage; 외공 plays a drill picked by the current
+    // 단련 screen: shows 외공/내공 and their tiers plus the combat power (전투력) they add up to, and
+    // lets the player train one of them once a day. The character sits in meditation on a 3D stage; 외공 plays a drill picked by the current
     // 외공 tier, 내공 plays the qi effect at the current 내공 tier. The result is saved the moment a
     // button is pressed (so leaving mid-show cannot train twice) and revealed when the show ends.
     //
@@ -41,6 +43,7 @@ namespace Game.Client.Cultivation
         private Button externalButton;
         private Button internalButton;
         private Text statusText;
+        private Text powerText;
         private Text gainText;
         private GameObject tierUpBanner;
         private Text tierUpText;
@@ -192,6 +195,11 @@ namespace Game.Client.Cultivation
             statusText.text = trained
                 ? "오늘의 수련을 마쳤습니다"
                 : "하루 한 번, 외공과 내공 중 하나를 수련할 수 있습니다";
+
+            // What the trained values are worth in battle: each is added to the base 100.
+            CombatStats combat = CombatPowerRules.FromCultivation(stats);
+            powerText.text = $"전투력 {CombatPowerText.Format(combat)}\n"
+                + $"<size=26><color=#{ColorUtility.ToHtmlStringRGB(InkTheme.TextMuted)}>전투 시 내공 {combat.InternalPower} · 외공 {combat.ExternalPower} (기본 {CombatPowerRules.BaseStat} + 단련)</color></size>";
         }
 
         private static void SetStat(Text value, Text tier, int power)
@@ -241,6 +249,9 @@ namespace Game.Client.Cultivation
 
             statusText = MakeText(root, "Status", "", 30, InkTheme.TextMuted, TextAnchor.MiddleCenter);
             Place(statusText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -1625f), new Vector2(1000f, 60f));
+
+            powerText = MakeText(root, "CombatPower", "", 44, InkTheme.Gold, TextAnchor.MiddleCenter);
+            Place(powerText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -1730f), new Vector2(1000f, 110f));
 
             gainText = MakeText(root, "Gain", "", 84, InkTheme.Gold, TextAnchor.MiddleCenter);
             InkStyle.StyleTitle(gainText, 84, InkTheme.Gold, 6f);

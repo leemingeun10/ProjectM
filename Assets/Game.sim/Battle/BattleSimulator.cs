@@ -10,19 +10,31 @@ namespace Game.Sim.Battle
     // Pure function of its inputs: no RNG, no clock, integer/Fixed math only.
     //
     // A hidden-technique turn fights as its chosen move (GetStepType) on its drawn points, and
-    // whatever damage it lands is scaled by its bonus (HiddenTechniques.ScaleDamage). Matchups and
-    // their outcomes are otherwise exactly those of ordinary turns.
+    // whatever damage it lands is scaled by its bonus (HiddenTechniques.DamagePercentOf). Matchups
+    // and their outcomes are otherwise exactly those of ordinary turns.
+    //
+    // Each side fights with its CombatStats: 내공 is its maximum HP and 외공 scales the damage it
+    // deals (CombatPowerRules). Without stats both sides are 100 / 100, where damage and HP are the
+    // turn table's own numbers.
     public static class BattleSimulator
     {
         public const int TurnsPerBattle = TechniqueBuilder.MaxTurns;
 
         public static BattleResult Simulate(IReadOnlyList<TechniqueStep> stepsA, IReadOnlyList<TechniqueStep> stepsB)
+            => Simulate(stepsA, stepsB, CombatStats.Default, CombatStats.Default);
+
+        public static BattleResult Simulate(IReadOnlyList<TechniqueStep> stepsA, IReadOnlyList<TechniqueStep> stepsB,
+            CombatStats statsA, CombatStats statsB)
         {
             Validate(stepsA, nameof(stepsA));
             Validate(stepsB, nameof(stepsB));
+            Validate(statsA, nameof(statsA));
+            Validate(statsB, nameof(statsB));
 
-            int hpA = BattleConstants.StartingHP;
-            int hpB = BattleConstants.StartingHP;
+            int maxHpA = CombatPowerRules.MaxHp(statsA);
+            int maxHpB = CombatPowerRules.MaxHp(statsB);
+            int hpA = maxHpA;
+            int hpB = maxHpB;
             var events = new List<TurnEvent>(TurnsPerBattle);
 
             for (int turn = 0; turn < TurnsPerBattle; turn++)
@@ -33,9 +45,10 @@ namespace Game.Sim.Battle
                 BattleStepType typeB = GetStepType(b);
 
                 (int damageToA, int damageToB, TurnReason reason) = ResolveTurn(typeA, a, typeB, b);
-                // Damage to one side is always dealt by the other side's turn.
-                damageToA = HiddenTechniques.ScaleDamage(damageToA, b);
-                damageToB = HiddenTechniques.ScaleDamage(damageToB, a);
+                // Damage to one side is always dealt by the other side's turn, so it takes that
+                // side's hidden-technique bonus and 외공.
+                damageToA = CombatPowerRules.Damage(damageToA, HiddenTechniques.DamagePercentOf(b), statsB.ExternalPower);
+                damageToB = CombatPowerRules.Damage(damageToB, HiddenTechniques.DamagePercentOf(a), statsA.ExternalPower);
                 hpA -= damageToA;
                 hpB -= damageToB;
                 events.Add(new TurnEvent(turn, typeA, typeB, damageToA, damageToB, reason, hpA, hpB));
@@ -44,7 +57,7 @@ namespace Game.Sim.Battle
                     break;
             }
 
-            return new BattleResult(events, hpA, hpB, DecideOutcome(hpA, hpB));
+            return new BattleResult(events, hpA, hpB, DecideOutcome(hpA, maxHpA, hpB, maxHpB), maxHpA, maxHpB);
         }
 
         public static BattleStepType GetStepType(TechniqueStep step)
@@ -72,16 +85,19 @@ namespace Game.Sim.Battle
             return damage > int.MaxValue ? int.MaxValue : (int)damage;
         }
 
-        // Both KO'd on the same turn counts as a draw; otherwise the survivor / higher HP wins.
-        private static BattleOutcome DecideOutcome(int hpA, int hpB)
+        // Both KO'd on the same turn counts as a draw, and a lone KO loses. If both are still
+        // standing after the last turn, the side with the larger share of its HP left wins
+        // (remaining / maximum), so a large HP pool alone does not win on time.
+        private static BattleOutcome DecideOutcome(int hpA, int maxHpA, int hpB, int maxHpB)
         {
             bool aDown = hpA <= 0;
             bool bDown = hpB <= 0;
             if (aDown && bDown) return BattleOutcome.Draw;
             if (bDown) return BattleOutcome.WinA;
             if (aDown) return BattleOutcome.WinB;
-            if (hpA > hpB) return BattleOutcome.WinA;
-            if (hpB > hpA) return BattleOutcome.WinB;
+            int share = CombatPowerRules.CompareHpShare(hpA, maxHpA, hpB, maxHpB);
+            if (share > 0) return BattleOutcome.WinA;
+            if (share < 0) return BattleOutcome.WinB;
             return BattleOutcome.Draw;
         }
 
@@ -120,6 +136,13 @@ namespace Game.Sim.Battle
                     (int toB, int toA, TurnReason reason) = ResolveTurn(typeB, b, typeA, a);
                     return (toA, toB, reason);
             }
+        }
+
+        // default(CombatStats) skips the constructor's checks; 0 HP would end the battle unfought.
+        private static void Validate(CombatStats stats, string paramName)
+        {
+            if (stats.InternalPower < 1 || stats.ExternalPower < 1)
+                throw new ArgumentException($"Combat stats must both be at least 1 (got {stats}); use CombatStats.Default for none.", paramName);
         }
 
         private static void Validate(IReadOnlyList<TechniqueStep> steps, string paramName)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Game.Client.Battle;
+using Game.Client.Cultivation;
 using Game.Client.Flow;
 using Game.Client.Progress;
 using Game.Client.Pvp;
@@ -11,8 +12,10 @@ using Game.Client.Technique;
 using Game.Client.Ui;
 using Game.Sim.Ai;
 using Game.Sim.Battle;
+using Game.Sim.Cultivation;
 using Game.Sim.Progress;
 using Game.Sim.Pvp;
+using Game.Sim.Stroke;
 using Game.Sim.Technique;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,6 +30,8 @@ namespace Game.Client.Stage
     // that stage's seeded AI, moves to the battle screen to replay it, and records the clear on a win.
     // PvP: the lobby's start button runs the same slot pick against an opponent from IPvpBackend
     // and reports the outcome once the replay ends.
+    // Stats: 수련 and story battles pit the player's trained stats against the stage's enemy stats;
+    // 비무 is 100 / 100 on both sides (BattleMatchups).
     // Techniques are never drawn here: with no complete slot the popup points to 무공 제작.
     // Game.sim decides everything; this only wires UI and files.
     public class StageSelectController : MonoBehaviour
@@ -192,9 +197,13 @@ namespace Game.Client.Stage
         // Placeholder until chapters get their own themes.
         private static string ChapterName(int chapter) => $"{chapter}장";
 
+        // A boss card has four lines (number, 보스전, status, 권장) where the others have three.
+        private const float BossLabelLineSpacing = 0.78f;
+
         // Boss stages keep the hanji card but get a heavier vermilion frame and a 보스전 line.
         private static void MarkAsBoss(Button button)
         {
+            button.GetComponentInChildren<Text>(true).lineSpacing = BossLabelLineSpacing;
             UIRectOutline border = InkStyle.EnsureBorder(button.GetComponent<RectTransform>(), InkTheme.Vermilion, 5f);
             border.Thickness = 4f;
             button.GetComponent<InkButtonLabel>().Configure(button, button.GetComponentInChildren<Text>(true), border,
@@ -236,7 +245,8 @@ namespace Game.Client.Stage
                 string status = cleared ? $"<color={ClearedColorTag}>클리어</color>"
                     : unlocked ? DescribeDifficulty(stage.Difficulty)
                     : "잠김";
-                button.GetComponentInChildren<Text>(true).text = $"{stage.StageIndex}{bossLine}\n<size=24>{status}</size>";
+                string power = $"권장 {CombatPowerText.Format(stage.RecommendedPowerPermille)}";
+                button.GetComponentInChildren<Text>(true).text = $"{stage.StageIndex}{bossLine}\n<size=24>{status}</size>\n<size=22>{power}</size>";
             }
 
             bool pvpUnlocked = ProgressRules.IsPvpUnlocked(progress);
@@ -355,14 +365,26 @@ namespace Game.Client.Stage
 
         // Re-checked on load: the file may have changed since the status scan.
         // BattleSimulator requires a full sequence; report it here instead of letting it throw.
+        // The steps come back in battle units (see PlayerStepsForBattle); every battle with a slot
+        // (수련, 스토리, 비무) gets them from here, so nothing downstream converts again.
         private bool TryLoadPlayerSteps(int slot, out List<TechniqueStep> playerSteps)
         {
-            if (TechniqueSlotStore.TryLoad(slot, out playerSteps) && playerSteps.Count == BattleSimulator.TurnsPerBattle)
+            if (TechniqueSlotStore.TryLoad(slot, out List<TechniqueStep> savedSteps) && savedSteps.Count == BattleSimulator.TurnsPerBattle)
+            {
+                playerSteps = PlayerStepsForBattle(savedSteps);
                 return true;
+            }
 
+            playerSteps = null;
             ShowNotice("무공을 불러올 수 없습니다", $"슬롯 {slot}의 무공이 손상되었거나 미완성입니다.\n무공 제작에서 다시 저장하세요.");
             return false;
         }
+
+        // A slot stores what the player drew, in frame centimetres; battles are computed in canvas
+        // units, the space AI techniques are generated in. Only slot steps go through this:
+        // StarterTechnique, StageCatalog AIs and the 비무 opponent pool are already canvas units.
+        public static List<TechniqueStep> PlayerStepsForBattle(IReadOnlyList<TechniqueStep> savedSteps)
+            => StrokeUnits.CmToCanvas(savedSteps);
 
         private void PlayStageWithSlot(int stageIndex, int slot)
         {
@@ -372,8 +394,10 @@ namespace Game.Client.Stage
             Debug.Log($"[Stage] 스테이지 {stageIndex}: 슬롯 {slot} 무공으로 전투");
             StageDefinition stage = StageCatalog.Get(stageIndex);
             List<TechniqueStep> aiSteps = AiTechniqueGenerator.Generate(stage.Difficulty, stage.Seed);
-            BattleResult result = BattleSimulator.Simulate(playerSteps, aiSteps);
-            LogResult($"[Stage] 스테이지 {stage.StageIndex} ({stage.Difficulty})", result);
+            CultivationStats cultivation = CultivationStore.Load();
+            BattleResult result = BattleMatchups.Training(playerSteps, aiSteps, stage, cultivation);
+            LogResult($"[Stage] 스테이지 {stage.StageIndex} ({stage.Difficulty}, 권장 전투력 {CombatPowerText.Format(stage.RecommendedPowerPermille)})",
+                result, BattleMatchups.PlayerStats(cultivation), stage.EnemyStats);
 
             string note = null;
             if (result.Outcome == BattleOutcome.WinA)
@@ -393,22 +417,23 @@ namespace Game.Client.Stage
 
         // A story map battle (StoryStagePlayer): the same slot pick, seeded StageCatalog AI, scenery
         // and replay as a stage, but nothing is recorded here; the story keeps its own save.
+        // enemyStats are the story stage's own (StoryStage.EnemyStats), not the aiStage's.
         // starterSteps, if given, is fought with when the player has no complete slot (1-1); without
         // it the usual popup points to 무공 제작. exitFor builds the replay's exit buttons from the
         // outcome, so the story learns the result when the player leaves the battle screen.
-        public void PlayStoryBattle(int aiStageIndex, ArenaTheme theme, EnemyLook look,
+        public void PlayStoryBattle(int aiStageIndex, CombatStats enemyStats, ArenaTheme theme, EnemyLook look,
             IReadOnlyList<TechniqueStep> starterSteps, Func<BattleOutcome, BattleReplayController.ReplayExit> exitFor)
         {
             if (starterSteps != null && !HasCompleteSlot())
             {
-                StartStoryBattle(starterSteps, aiStageIndex, theme, look, exitFor);
+                StartStoryBattle(starterSteps, aiStageIndex, enemyStats, theme, look, exitFor);
                 return;
             }
 
             PickSlotThen(slot =>
             {
                 if (TryLoadPlayerSteps(slot, out List<TechniqueStep> playerSteps))
-                    StartStoryBattle(playerSteps, aiStageIndex, theme, look, exitFor);
+                    StartStoryBattle(playerSteps, aiStageIndex, enemyStats, theme, look, exitFor);
             });
         }
 
@@ -422,13 +447,16 @@ namespace Game.Client.Stage
             return false;
         }
 
-        private void StartStoryBattle(IReadOnlyList<TechniqueStep> playerSteps, int aiStageIndex, ArenaTheme theme, EnemyLook look,
+        private void StartStoryBattle(IReadOnlyList<TechniqueStep> playerSteps, int aiStageIndex, CombatStats enemyStats,
+            ArenaTheme theme, EnemyLook look,
             Func<BattleOutcome, BattleReplayController.ReplayExit> exitFor)
         {
             StageDefinition stage = StageCatalog.Get(aiStageIndex);
             List<TechniqueStep> aiSteps = AiTechniqueGenerator.Generate(stage.Difficulty, stage.Seed);
-            BattleResult result = BattleSimulator.Simulate(playerSteps, aiSteps);
-            LogResult($"[Story] 스토리 전투 (상대 스테이지 {stage.StageIndex}, {stage.Difficulty})", result);
+            CultivationStats cultivation = CultivationStore.Load();
+            BattleResult result = BattleMatchups.Story(playerSteps, aiSteps, enemyStats, cultivation);
+            LogResult($"[Story] 스토리 전투 (상대 스테이지 {stage.StageIndex}, {stage.Difficulty})",
+                result, BattleMatchups.PlayerStats(cultivation), enemyStats);
 
             BattleReplayController.ReplayExit exit = exitFor?.Invoke(result.Outcome);
             flow.GoTo(GameScreen.Battle, () =>
@@ -448,8 +476,8 @@ namespace Game.Client.Stage
 
             Debug.Log($"[Pvp] 슬롯 {slot} 무공으로 PvP 전투");
             IReadOnlyList<TechniqueStep> opponentSteps = pvpBackend.FetchRandomOpponent();
-            BattleResult result = BattleSimulator.Simulate(playerSteps, opponentSteps);
-            LogResult("[Pvp] PvP", result);
+            BattleResult result = BattleMatchups.Sparring(playerSteps, opponentSteps);
+            LogResult("[Pvp] PvP", result, CombatStats.Default, CombatStats.Default);
 
             messageText.text = string.Empty;
             flow.GoTo(GameScreen.Battle, () =>
@@ -491,13 +519,14 @@ namespace Game.Client.Stage
             return sb.ToString();
         }
 
-        private static void LogResult(string title, BattleResult result)
+        private static void LogResult(string title, BattleResult result, CombatStats player, CombatStats enemy)
         {
             var sb = new StringBuilder();
             sb.AppendLine($"{title} 대전 결과");
+            sb.AppendLine($"플레이어 {player} (전투력 {CombatPowerText.Format(player)}) vs 상대 {enemy} (전투력 {CombatPowerText.Format(enemy)})");
             foreach (TurnEvent e in result.Events)
                 sb.AppendLine($"턴 {e.TurnIndex + 1}: 플레이어({e.TypeA}) vs AI({e.TypeB}) - 판정:{e.Reason} - 플레이어 데미지 {e.DamageToA} AI 데미지 {e.DamageToB} - HP 플레이어:{e.HpAAfter} AI:{e.HpBAfter}");
-            sb.AppendLine($"최종 결과: {result.Outcome} - 최종 HP 플레이어:{result.FinalHpA} AI:{result.FinalHpB}");
+            sb.AppendLine($"최종 결과: {result.Outcome} - 최종 HP 플레이어:{result.FinalHpA}/{result.MaxHpA} AI:{result.FinalHpB}/{result.MaxHpB}");
             Debug.Log(sb.ToString());
         }
 

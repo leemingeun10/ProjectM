@@ -1,5 +1,6 @@
 using System;
 using Game.Client.Battle;
+using Game.Client.Cultivation;
 using Game.Client.Flow;
 using Game.Client.Stage;
 using Game.Sim.Battle;
@@ -108,8 +109,7 @@ namespace Game.Client.Story
                     break;
                 case StoryStepKind.Battle:
                     SetHead("전투");
-                    ShowPanel(stage.enemy, string.IsNullOrEmpty(stage.system) ? string.Empty : $"시스템: {stage.system}",
-                        "전투 시작", StartBattle, null, null);
+                    ShowPanel(stage.enemy, BattleGuide(stage), "전투 시작", StartBattle, null, null);
                     break;
                 case StoryStepKind.Lost:
                     SetHead("패배");
@@ -128,6 +128,17 @@ namespace Game.Client.Story
                     ShowPanel(book.partEnd.title, body, "지도로", () => { run.Next(); Show(); }, null, null);
                     break;
             }
+        }
+
+        // The battle panel's body: the stage's system note, then the recommended combat power next
+        // to the player's own. A forced loss has no recommendation, so only the player's is shown.
+        private static string BattleGuide(StoryStage stage)
+        {
+            string own = $"내 전투력 {CombatPowerText.Format(BattleMatchups.PlayerStats(CultivationStore.Load()))}";
+            string power = stage.recommendedPowerPermille > 0
+                ? $"권장 전투력 {CombatPowerText.Format(stage.recommendedPowerPermille)} · {own}"
+                : own;
+            return string.IsNullOrEmpty(stage.system) ? power : $"시스템: {stage.system}\n{power}";
         }
 
         private void SetHead(string extra) => headText.text = $"{run.Stage.id} {run.Stage.name}, {extra}";
@@ -195,7 +206,7 @@ namespace Game.Client.Story
             StoryRun battleRun = run;
             StoryStage stage = battleRun.Stage;
             string outcomeLabel = string.IsNullOrEmpty(stage.outcomeLabel) ? null : stage.outcomeLabel;
-            battles.PlayStoryBattle(stage.aiStage, stage.Theme, stage.Look,
+            battles.PlayStoryBattle(stage.aiStage, stage.EnemyStats, stage.Theme, stage.Look,
                 stage.starter ? StarterTechnique.Create() : null,
                 outcome => new BattleReplayController.ReplayExit
                 {

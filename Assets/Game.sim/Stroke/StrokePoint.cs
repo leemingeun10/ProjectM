@@ -1,8 +1,9 @@
 namespace Game.Sim.Stroke
 {
-    // A single sample of a drawn stroke, in fixed-point simulation space.
-    // Game.Client is responsible for converting its float/pixel coordinates into this type
-    // at the input/simulation boundary (see CLAUDE.md architecture rules).
+    // A single sample of a stroke, in fixed-point simulation space. The type carries no unit:
+    // a drawn or saved player stroke is in frame centimetres (Game.Client converts its float
+    // centimetres into this type at the input/simulation boundary, see CLAUDE.md), while AI
+    // strokes and every stroke inside a battle are in canvas units. StrokeUnits converts.
     public readonly struct StrokePoint
     {
         public readonly Fixed X;

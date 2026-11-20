@@ -25,6 +25,8 @@ namespace Game.Client.Battle
         private const float HpLerpDuration = 0.3f;
         private const float FastSpeed = 2f;
         private const int OutcomeFontSize = 130;
+        // The "/max" after each side's HP is written smaller so the line still fits beside the bar.
+        private const int MaxHpFontSize = 24;
 
         // Optional overrides for a replay that is part of something else (the story map). Every
         // field left null keeps the normal 수련/비무 behaviour: the outcome word, and "홈으로" on the
@@ -95,6 +97,9 @@ namespace Game.Client.Battle
             resultExitLabel = resultHomeButton.GetComponentInChildren<Text>(true);
             defaultCloseLabel = closeLabel != null ? closeLabel.text : null;
             defaultResultExitLabel = resultExitLabel != null ? resultExitLabel.text : null;
+            // "나 210/210" is wider than the old "나  100" and has no good place to wrap.
+            hpTextA.horizontalOverflow = HorizontalWrapMode.Overflow;
+            hpTextB.horizontalOverflow = HorizontalWrapMode.Overflow;
 
             // Same fail-once policy as StrokeAnimationPlayer: report unwired characters up front.
             var missing = new List<string>();
@@ -200,7 +205,7 @@ namespace Game.Client.Battle
             characterA.StopToIdle();
             characterB.StopToIdle();
             cameraRig.SetFocused(false);
-            SetHp(BattleConstants.StartingHP, BattleConstants.StartingHP);
+            SetHp(currentResult.MaxHpA, currentResult.MaxHpB);
             turnText.text = $"턴 0 / {BattleSimulator.TurnsPerBattle}";
             descriptionText.text = string.Empty;
             strokeComparison.Clear();
@@ -256,8 +261,8 @@ namespace Game.Client.Battle
 
         private IEnumerator PlayTurns(BattleResult result)
         {
-            float shownA = BattleConstants.StartingHP;
-            float shownB = BattleConstants.StartingHP;
+            float shownA = result.MaxHpA;
+            float shownB = result.MaxHpB;
 
             foreach (TurnEvent e in result.Events)
             {
@@ -384,14 +389,18 @@ namespace Game.Client.Battle
             characterB.PlaybackSpeed = motionSpeed;
         }
 
+        // Bars are filled against each side's own maximum HP (its 내공), which the text also names
+        // since the two sides rarely start equal.
         private void SetHp(float hpA, float hpB)
         {
-            hpFillA.fillAmount = hpA / BattleConstants.StartingHP;
-            hpFillB.fillAmount = hpB / BattleConstants.StartingHP;
-            hpTextA.text = $"나  {Mathf.RoundToInt(hpA)}";
-            hpTextB.text = $"상대  {Mathf.RoundToInt(hpB)}";
-            worldHpA.SetHp(hpA, BattleConstants.StartingHP);
-            worldHpB.SetHp(hpB, BattleConstants.StartingHP);
+            int maxA = currentResult.MaxHpA;
+            int maxB = currentResult.MaxHpB;
+            hpFillA.fillAmount = hpA / maxA;
+            hpFillB.fillAmount = hpB / maxB;
+            hpTextA.text = $"나 {Mathf.RoundToInt(hpA)}<size={MaxHpFontSize}>/{maxA}</size>";
+            hpTextB.text = $"상대 {Mathf.RoundToInt(hpB)}<size={MaxHpFontSize}>/{maxB}</size>";
+            worldHpA.SetHp(hpA, maxA);
+            worldHpB.SetHp(hpB, maxB);
         }
 
         private void SetWorldHpVisible(bool visible)
